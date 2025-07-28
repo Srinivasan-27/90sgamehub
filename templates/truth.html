@@ -1,0 +1,581 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <title>Truth or Dare Spin Wheel</title>
+    <style>
+        :root {
+            --primary-color: #6a5acd;
+            --secondary-color: #9370db;
+            --accent-color: #ff69b4;
+            --dark-color: #4b0082;
+            --light-color: #e6e6fa;
+            --text-color: #333;
+            --success-color: #4CAF50;
+        }
+
+        /* General Body Styles & Scroll Lock */
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, var(--light-color), var(--secondary-color));
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: flex-start; /* Align to top */
+            min-height: 100vh;
+            margin: 0;
+            padding: 20px;
+            text-align: center;
+            color: var(--text-color);
+            overflow-x: hidden;
+        }
+        .no-scroll {
+            overflow: hidden;
+        }
+
+        /* Main Container & Title */
+        .container {
+            width: 100%;
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+        h1 {
+            color: var(--dark-color);
+            text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.2);
+            margin-bottom: 20px;
+            font-size: clamp(1.8rem, 5vw, 2.5rem);
+            background: rgba(255, 255, 255, 0.8);
+            padding: 10px 30px;
+            border-radius: 50px;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+        }
+
+        /* Game Card Layout */
+        .game-card {
+            background: rgba(255, 255, 255, 0.95);
+            border-radius: 20px;
+            padding: clamp(15px, 4vw, 30px);
+            box-shadow: 0 8px 25px rgba(0, 0, 0, 0.15);
+            margin-bottom: 30px;
+            position: relative;
+        }
+        
+        /* Game Container & Wheel */
+        .game-container {
+            position: relative;
+            width: min(90vw, 400px);
+            height: min(90vw, 400px);
+            margin: 0 auto 30px auto;
+        }
+        .wheel {
+            width: 100%;
+            height: 100%;
+            border-radius: 50%;
+            position: relative;
+            overflow: hidden;
+            border: 10px solid var(--dark-color);
+            box-shadow: 0 0 20px rgba(0,0,0,0.3), inset 0 0 20px rgba(0,0,0,0.2);
+            /* ENHANCED ANIMATION: Added a "bounce" effect at the end of the spin */
+            transition: transform 5s cubic-bezier(0.34, 1.56, 0.64, 1);
+        }
+        .section {
+            position: absolute;
+            width: 50%;
+            height: 50%;
+            transform-origin: bottom right;
+            clip-path: polygon(0 0, 100% 0, 100% 100%);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            box-sizing: border-box;
+            padding-bottom: 110px;
+            font-weight: bold;
+            font-size: clamp(18px, 4vw, 22px);
+            color: white;
+            text-shadow: 1px 1px 3px rgba(0,0,0,0.8);
+            border: 1px solid rgba(255,255,255,0.2);
+            transition: all 0.3s ease; /* Smooth transition for highlighting */
+        }
+        
+        /* NEW: Style for the highlighted wheel segment */
+        .highlighted-section {
+            box-shadow: inset 0 0 25px rgba(255, 255, 255, 0.9), 0 0 35px rgba(255, 255, 255, 0.8);
+            color: #000;
+            text-shadow: none;
+        }
+
+        .wheel-center {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 60px;
+            height: 60px;
+            background: var(--dark-color);
+            border-radius: 50%;
+            border: 5px solid var(--light-color);
+            z-index: 5;
+            box-shadow: inset 0 0 10px rgba(0,0,0,0.5), 0 0 10px rgba(0,0,0,0.5);
+        }
+
+        /* Buttons: General */
+        .buttons-group {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 15px;
+            justify-content: center;
+            margin-bottom: 20px;
+        }
+        button, .nav-button {
+            padding: 12px 25px;
+            font-size: 18px;
+            border: none;
+            border-radius: 50px;
+            cursor: pointer;
+            font-weight: bold;
+            transition: all 0.3s;
+            box-shadow: 0 4px 8px rgba(0,0,0,0.2);
+            background-color: var(--primary-color);
+            color: white;
+            text-decoration: none;
+            display: inline-block;
+        }
+        button:hover, .nav-button:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 6px 12px rgba(0,0,0,0.3);
+        }
+        /* ENHANCED ANIMATION: Added a more satisfying press-down effect */
+        button:active, .nav-button:active {
+            transform: translateY(1px) scale(0.98);
+            box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+        }
+        button:disabled {
+            background-color: #ccc;
+            cursor: not-allowed;
+            transform: translateY(0);
+            box-shadow: 0 4px 8px rgba(0,0,0,0.2);
+        }
+
+        /* Specific Buttons */
+        #spinBtn { background-color: var(--accent-color); }
+        #spinBtn:hover { background-color: #ff85c2; }
+        #resetBtn { background-color: var(--dark-color); }
+        #resetBtn:hover { background-color: #5a0099; }
+        #saveTruth, #saveDare { background-color: var(--success-color); }
+        #saveTruth:hover, #saveDare:hover { background-color: #5cb85c; }
+        .nav-button { background-color: #777; }
+        .nav-button:hover { background-color: #999; }
+
+        /* Instructions & Back Buttons */
+        .utility-buttons {
+            position: absolute;
+            top: 20px;
+            left: 20px;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+        .utility-btn {
+            background: rgba(0,0,0,0.4);
+            color: white;
+            border: 1px solid white;
+            padding: 8px 15px;
+            font-size: 14px;
+        }
+        @media (max-width: 600px) {
+            .utility-buttons { top: 10px; left: 10px; }
+        }
+
+        /* Result Box */
+        .result {
+            margin-top: 20px;
+            padding: 25px;
+            background-color: rgba(255, 255, 255, 0.95);
+            border-radius: 15px;
+            box-shadow: 0 6px 12px rgba(0,0,0,0.15);
+            max-width: 90%;
+            margin-left: auto;
+            margin-right: auto;
+            display: none;
+            /* ENHANCED ANIMATION: Using a new pop-in effect */
+            animation: result-pop-in 0.6s cubic-bezier(0.34, 1.56, 0.64, 1);
+            border: 3px solid var(--accent-color);
+        }
+        /* ENHANCED ANIMATION: Keyframes for the result box pop-in effect */
+        @keyframes result-pop-in {
+            0% { opacity: 0; transform: translateY(30px) scale(0.95); }
+            80% { opacity: 1; transform: translateY(-5px) scale(1.02); }
+            100% { opacity: 1; transform: translateY(0) scale(1); }
+        }
+        .result h2 { 
+            font-size: 24px; 
+            margin-top: 0;
+            transition: color 0.3s;
+        }
+        /* Class for highlighting the result title */
+        .result-title-highlight {
+            animation: text-glow 1.5s ease-in-out infinite;
+        }
+        /* Keyframes for the title's glowing animation */
+        @keyframes text-glow {
+            0%, 100% {
+                text-shadow: 0 0 5px #fff, 0 0 10px #fff;
+            }
+            50% {
+                text-shadow: 0 0 10px var(--accent-color), 0 0 20px var(--accent-color);
+            }
+        }
+        .result p { font-size: 22px; color: var(--text-color); margin-bottom: 0; line-height: 1.4; }
+
+        /* Customization Section */
+        .customize {
+            padding: 20px;
+            border-radius: 15px;
+            width: 90%;
+            max-width: 600px;
+            margin: 0 auto;
+        }
+        .customize h3 { color: var(--primary-color); font-size: 22px; }
+        textarea {
+            width: 100%;
+            height: 120px;
+            margin-bottom: 15px;
+            padding: 12px;
+            border-radius: 8px;
+            border: 2px solid #ddd;
+            font-size: 16px;
+            resize: vertical;
+        }
+        .tab-buttons { display: flex; margin-bottom: 15px; }
+        .tab-button { flex: 1; padding: 12px; background-color: #eee; border-radius: 0; box-shadow: none; }
+        .tab-button.active { background-color: var(--primary-color); color: white; }
+        .tab-content { display: none; }
+        .tab-content.active { display: block; }
+        
+        /* Instructions Modal */
+        .modal {
+            display: none;
+            position: fixed;
+            z-index: 1000;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            overflow: auto;
+            background-color: rgba(0,0,0,0.6);
+            animation: fadeInModal 0.3s;
+        }
+        @keyframes fadeInModal { from { opacity: 0; } to { opacity: 1; } }
+        .modal-content {
+            background-color: var(--light-color);
+            margin: 15% auto;
+            padding: 30px;
+            border: 5px solid var(--primary-color);
+            border-radius: 20px;
+            width: 80%;
+            max-width: 500px;
+            position: relative;
+            box-shadow: 0 5px 20px rgba(0,0,0,0.4);
+        }
+        .modal-close {
+            color: #aaa;
+            position: absolute;
+            top: 10px;
+            right: 20px;
+            font-size: 32px;
+            font-weight: bold;
+            cursor: pointer;
+        }
+        .modal-close:hover { color: var(--dark-color); }
+        .modal h2 { color: var(--dark-color); margin-top: 0; }
+        .modal ul { text-align: left; padding-left: 25px; line-height: 1.6; }
+
+        /* Notification Styling */
+        .notification {
+            position: fixed;
+            bottom: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            padding: 12px 24px;
+            border-radius: 50px;
+            color: white;
+            font-weight: bold;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+            z-index: 2000;
+            opacity: 0;
+            transition: opacity 0.3s, transform 0.3s;
+        }
+        .notification.show {
+            opacity: 1;
+            transform: translate(-50%, -10px);
+        }
+    </style>
+</head>
+<body>
+    <div id="instructionsModal" class="modal">
+        <div class="modal-content">
+            <span class="modal-close">&times;</span>
+            <h2>How to Play</h2>
+            <ul>
+                <li>Click <strong>SPIN THE WHEEL</strong> to start.</li>
+                <li>The wheel will select either <strong>TRUTH</strong> or <strong>DARE</strong> and the segment will light up.</li>
+                <li>A random question or challenge will appear below.</li>
+                <li>Complete the task and let the next person play!</li>
+                <li>Use the <strong>Reset Game</strong> button to reset the wheel and restore the original questions.</li>
+                <li>You can add your own questions and dares for the current game session.</li>
+            </ul>
+        </div>
+    </div>
+
+    <div class="container">
+        <div class="game-card">
+            <div class="utility-buttons">
+                <a href="/" class="nav-button utility-btn"> &larr; Back </a>
+                <button id="instructionsBtn" class="utility-btn">Instructions</button>
+            </div>
+
+            <h1>Truth or Dare</h1>
+            
+            <div class="game-container">
+                <div class="wheel" id="wheel"></div>
+                <div class="wheel-center"></div>
+            </div>
+            
+            <div class="buttons-group">
+                <button id="spinBtn">SPIN THE WHEEL!</button>
+                <button id="resetBtn">Reset Game</button>
+            </div>
+            
+            <div class="result" id="result">
+                <h2 id="resultTitle"></h2>
+                <p id="resultText"></p>
+            </div>
+        </div>
+        
+        <div class="game-card">
+            <div class="customize">
+                <h3>Customize Your Game (Current Session Only)</h3>
+                <div class="tab-buttons">
+                    <button class="tab-button active" data-tab="truth">Truth Questions</button>
+                    <button class="tab-button" data-tab="dare">Dare Challenges</button>
+                </div>
+                
+                <div class="tab-content active" id="truth-tab">
+                    <textarea id="truthQuestions" placeholder="Enter truth questions, one per line"></textarea>
+                    <button id="saveTruth">Save Truths</button>
+                </div>
+                
+                <div class="tab-content" id="dare-tab">
+                    <textarea id="dareChallenges" placeholder="Enter dare challenges, one per line"></textarea>
+                    <button id="saveDare">Save Dares</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            // Game data
+            const wheelSections = [
+                { text: "TRUTH", color: "#4169E1", type: "truth" }, { text: "DARE", color: "#FF1493", type: "dare" },
+                { text: "TRUTH", color: "#4169E1", type: "truth" }, { text: "DARE", color: "#FF1493", type: "dare" },
+                { text: "TRUTH", color: "#4169E1", type: "truth" }, { text: "DARE", color: "#FF1493", type: "dare" },
+                { text: "TRUTH", color: "#4169E1", type: "truth" }, { text: "DARE", color: "#FF1493", type: "dare" }
+            ];
+
+            // Store default questions separately to allow for resetting.
+            const defaultTruths = [
+                "What's your most embarrassing moment?", "What's something you've never told anyone?",
+                "If you could be invisible for a day, what would you do?", "What's your biggest fear?",
+                "What's the weirdest thing you've ever eaten?", "Who is your secret crush?",
+                "What's the most trouble you've ever gotten into?"
+            ];
+
+            const defaultDares = [
+                "Do your best impression of a celebrity.", "Sing a song at the top of your lungs.",
+                "Dance like nobody's watching for 30 seconds.", "Let someone give you a silly hairstyle.",
+                "Eat a spoonful of a condiment you dislike.", "Text your crush with a silly message.",
+                "Wear your clothes backwards for the next round."
+            ];
+
+            // These arrays will hold the active questions, which can be temporarily modified.
+            let truthQuestions = [...defaultTruths];
+            let dareChallenges = [...defaultDares];
+
+            // DOM elements
+            const wheel = document.getElementById('wheel');
+            const spinBtn = document.getElementById('spinBtn');
+            const resetBtn = document.getElementById('resetBtn');
+            const resultDiv = document.getElementById('result');
+            const resultTitle = document.getElementById('resultTitle');
+            const resultText = document.getElementById('resultText');
+            const truthTextarea = document.getElementById('truthQuestions');
+            const dareTextarea = document.getElementById('dareChallenges');
+            const saveTruthBtn = document.getElementById('saveTruth');
+            const saveDareBtn = document.getElementById('saveDare');
+            const tabButtons = document.querySelectorAll('.tab-button');
+            const tabContents = document.querySelectorAll('.tab-content');
+            const instructionsBtn = document.getElementById('instructionsBtn');
+            const instructionsModal = document.getElementById('instructionsModal');
+            const modalClose = document.querySelector('.modal-close');
+
+            let isSpinning = false;
+            let currentRotation = 0;
+
+            // Initialize Wheel
+            const initWheel = () => {
+                const sectionAngle = 360 / wheelSections.length;
+                wheel.innerHTML = '';
+                wheelSections.forEach((section, index) => {
+                    const sectionEl = document.createElement('div');
+                    sectionEl.className = 'section';
+                    sectionEl.textContent = section.text;
+                    sectionEl.style.background = section.color;
+                    sectionEl.style.transform = `rotate(${sectionAngle * index}deg)`;
+                    wheel.appendChild(sectionEl);
+                });
+            };
+
+            // Spin Wheel Logic
+            const spinWheel = () => {
+                if (isSpinning) return;
+                isSpinning = true;
+                spinBtn.disabled = true;
+                document.body.classList.add('no-scroll');
+                resultDiv.style.display = 'none';
+                resultTitle.classList.remove('result-title-highlight');
+
+                // NEW: Remove highlight from wheel section on new spin
+                document.querySelectorAll('.section').forEach(s => s.classList.remove('highlighted-section'));
+
+                const spinAngle = Math.random() * 360 + 360 * 7;
+                currentRotation += spinAngle;
+                
+                wheel.style.transition = 'transform 5s cubic-bezier(0.34, 1.56, 0.64, 1)';
+                wheel.style.transform = `rotate(${currentRotation}deg)`;
+            };
+
+            // After spin finishes
+            wheel.addEventListener('transitionend', () => {
+                isSpinning = false;
+                spinBtn.disabled = false;
+                document.body.classList.remove('no-scroll');
+
+                const finalAngle = currentRotation % 360;
+                const sectionAngle = 360 / wheelSections.length;
+                const winningIndex = Math.floor((360 - finalAngle + sectionAngle / 2) % 360 / sectionAngle);
+                const winningSection = wheelSections[winningIndex];
+
+                // NEW: Highlight the winning section on the wheel
+                const sections = document.querySelectorAll('.section');
+                sections[winningIndex].classList.add('highlighted-section');
+
+                showResult(winningSection);
+            });
+
+            const showResult = (section) => {
+                let randomItem;
+                if (section.type === 'truth') {
+                    randomItem = truthQuestions.length > 0 ? truthQuestions[Math.floor(Math.random() * truthQuestions.length)] : "No Truths available!";
+                    resultTitle.textContent = "TRUTH:";
+                    resultTitle.style.color = section.color;
+                    resultDiv.style.borderColor = section.color;
+                } else {
+                    randomItem = dareChallenges.length > 0 ? dareChallenges[Math.floor(Math.random() * dareChallenges.length)] : "No Dares available!";
+                    resultTitle.textContent = "DARE:";
+                    resultTitle.style.color = section.color;
+                    resultDiv.style.borderColor = section.color;
+                }
+                resultText.textContent = randomItem;
+                resultDiv.style.display = 'block';
+
+                resultTitle.classList.add('result-title-highlight');
+            };
+            
+            // Reset game now also resets questions and highlights
+            const resetGame = () => {
+                if(isSpinning) return;
+                wheel.style.transition = 'none';
+                currentRotation = 0;
+                wheel.style.transform = 'rotate(0deg)';
+                resultDiv.style.display = 'none';
+                resultTitle.classList.remove('result-title-highlight');
+                
+                // NEW: Remove highlight from wheel section on reset
+                document.querySelectorAll('.section').forEach(s => s.classList.remove('highlighted-section'));
+
+                truthQuestions = [...defaultTruths];
+                dareChallenges = [...defaultDares];
+                truthTextarea.value = truthQuestions.join('\n');
+                dareTextarea.value = dareChallenges.join('\n');
+                showNotification('Game and questions reset to default!');
+
+                setTimeout(() => { wheel.style.transition = 'transform 5s cubic-bezier(0.34, 1.56, 0.64, 1)'; }, 50);
+            };
+
+            // Customization logic
+            const saveQuestions = (type) => {
+                const textarea = type === 'truth' ? truthTextarea : dareTextarea;
+                const questions = textarea.value.split('\n').filter(q => q.trim() !== '');
+
+                if (questions.length > 0) {
+                    if (type === 'truth') {
+                        truthQuestions = questions;
+                    } else {
+                        dareChallenges = questions;
+                    }
+                    showNotification(`${type.charAt(0).toUpperCase() + type.slice(1)} list updated for this session!`);
+                } else {
+                    showNotification(`Please enter at least one item.`, 'error');
+                }
+            };
+            
+            // Notification
+            const showNotification = (message, type = 'success') => {
+                const notification = document.createElement('div');
+                notification.className = 'notification';
+                notification.textContent = message;
+                notification.style.backgroundColor = type === 'success' ? 'var(--success-color)' : '#f44336';
+                document.body.appendChild(notification);
+                
+                setTimeout(() => notification.classList.add('show'), 10);
+                setTimeout(() => {
+                    notification.classList.remove('show');
+                    setTimeout(() => document.body.removeChild(notification), 300);
+                }, 2500);
+            };
+            
+            // Tab switching
+            tabButtons.forEach(button => {
+                button.addEventListener('click', (e) => {
+                    tabButtons.forEach(btn => btn.classList.remove('active'));
+                    tabContents.forEach(content => content.classList.remove('active'));
+                    e.target.classList.add('active');
+                    document.getElementById(`${e.target.dataset.tab}-tab`).classList.add('active');
+                });
+            });
+
+            // Instructions Modal
+            instructionsBtn.addEventListener('click', () => instructionsModal.style.display = 'block');
+            modalClose.addEventListener('click', () => instructionsModal.style.display = 'none');
+            window.addEventListener('click', (e) => {
+                if (e.target == instructionsModal) {
+                    instructionsModal.style.display = 'none';
+                }
+            });
+
+            // Event Listeners
+            spinBtn.addEventListener('click', spinWheel);
+            resetBtn.addEventListener('click', resetGame);
+            saveTruthBtn.addEventListener('click', () => saveQuestions('truth'));
+            saveDareBtn.addEventListener('click', () => saveQuestions('dare'));
+
+            // Initial load
+            truthTextarea.value = truthQuestions.join('\n');
+            dareTextarea.value = dareChallenges.join('\n');
+            initWheel();
+        });
+    </script>
+</body>
+</html>

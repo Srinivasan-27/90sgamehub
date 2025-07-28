@@ -1,0 +1,434 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <title>Memory Game</title>
+    <style>
+        :root {
+            --primary-color: #4e54c8; --secondary-color: #8f94fb; --accent-color: #ff416c;
+            --dark-color: #1e3c72; --light-color: #ffffff; --shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+            --transition: all 0.3s ease; --correct-color: #4CAF50; --incorrect-color: #F44336;
+            --card-font-size: 2.5rem;
+        }
+        
+        body {
+            font-family: 'Arial', sans-serif;
+            background: linear-gradient(135deg, var(--dark-color), #2a5298);
+            margin: 0; padding: 20px; display: flex; flex-direction: column;
+            align-items: center; min-height: 100vh; color: var(--light-color);
+            overflow: hidden; /* Lock scroll bar */
+        }
+
+        .header-bar {
+            width: 100%;
+            max-width: 800px;
+            display: flex;
+            justify-content: flex-end;
+            padding: 0 0 15px 0;
+            box-sizing: border-box;
+            z-index: 50;
+        }
+        
+        .header-buttons { display: flex; gap: 10px; }
+
+        .header-btn {
+            background: rgba(255, 255, 255, 0.1); color: white; border: 1px solid rgba(255, 255, 255, 0.2);
+            padding: 8px 16px; border-radius: 50px; cursor: pointer; text-decoration: none;
+            font-size: 0.9rem; transition: all 0.3s; font-family: 'Segoe UI', sans-serif; font-weight: bold;
+        }
+        .header-btn:hover { background: rgba(255, 255, 255, 0.2); transform: translateY(-2px); }
+        
+        .game-container {
+            background-color: rgba(255, 255, 255, 0.1); border-radius: 15px;
+            padding: 30px; box-shadow: var(--shadow); width: 90%;
+            max-width: 800px; text-align: center; backdrop-filter: blur(5px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+        
+        h1 {
+            margin-top: 0; font-size: 2.5rem; text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.5);
+            margin-bottom: 20px; background: linear-gradient(to right, var(--light-color), #f5f7fa);
+            -webkit-background-clip: text; background-clip: text; color: transparent;
+        }
+        
+        .board {
+            display: grid; grid-template-columns: repeat(4, 1fr); gap: 15px;
+            margin: 20px auto; width: 100%; max-width: 600px;
+        }
+        .board.locked { pointer-events: none; }
+        
+        .card {
+            aspect-ratio: 1/1; perspective: 1000px; cursor: pointer;
+            transition: var(--transition);
+        }
+        .card:not(.matched):hover { transform: translateY(-5px); }
+        
+        .card-inner {
+            position: relative; width: 100%; height: 100%;
+            transition: transform 0.6s, box-shadow 0.3s; transform-style: preserve-3d;
+            border-radius: 10px; box-shadow: var(--shadow);
+        }
+        .card.flipped .card-inner { transform: rotateY(180deg); }
+        .card.matched { cursor: default; transform: scale(0.95); opacity: 0.7; }
+        .card.matched .card-inner { box-shadow: 0 0 20px var(--correct-color); }
+        .card.correct .card-inner { box-shadow: 0 0 20px var(--correct-color); }
+        .card.incorrect .card-inner { box-shadow: 0 0 20px var(--incorrect-color); }
+        
+        .card-front, .card-back {
+            position: absolute; width: 100%; height: 100%;
+            backface-visibility: hidden; border-radius: 10px;
+            display: flex; justify-content: center; align-items: center;
+            font-size: var(--card-font-size); user-select: none;
+        }
+        .card-front { background: linear-gradient(45deg, var(--primary-color), var(--secondary-color)); color: var(--light-color); transform: rotateY(180deg); }
+        .card-back { background: linear-gradient(45deg, var(--accent-color), #ff4b2b); color: rgba(255, 255, 255, 0.9); }
+        
+        button {
+            background: linear-gradient(45deg, var(--primary-color), var(--secondary-color));
+            color: var(--light-color); border: none; padding: 12px 24px;
+            border-radius: 50px; cursor: pointer; font-size: 1rem;
+            transition: var(--transition); box-shadow: var(--shadow);
+            font-weight: bold; text-transform: uppercase; letter-spacing: 1px;
+        }
+        button:hover { transform: translateY(-3px); box-shadow: 0 6px 12px rgba(0, 0, 0, 0.3); }
+        
+        .stats { display: flex; justify-content: space-around; margin-top: 20px; background-color: rgba(255, 255, 255, 0.1); padding: 15px; border-radius: 10px; gap: 10px; flex-wrap: wrap; }
+        .stat { font-size: 1.2rem; min-width: 100px; background: rgba(0, 0, 0, 0.2); padding: 10px; border-radius: 8px; }
+        .stat span { font-weight: bold; color: #ffeb3b; }
+        
+        .modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background-color: rgba(0, 0, 0, 0.8); z-index: 100; justify-content: center; align-items: center; backdrop-filter: blur(5px); }
+        .modal-content { background: linear-gradient(135deg, var(--primary-color), var(--secondary-color)); padding: 30px; border-radius: 15px; text-align: center; max-width: 500px; width: 90%; box-shadow: 0 10px 25px rgba(0, 0, 0, 0.5); animation: modalFadeIn 0.4s; }
+        @keyframes modalFadeIn { from { opacity: 0; transform: translateY(-50px); } to { opacity: 1; transform: translateY(0); } }
+        .modal h2 { margin-top: 0; font-size: 2rem; color: var(--light-color); text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.3); }
+        
+        .difficulty-selector h3 { color: var(--light-color); margin-bottom: 15px; font-size: 1.2rem; }
+        .difficulty-buttons { display: flex; justify-content: center; gap: 10px; flex-wrap: wrap; }
+        .difficulty-btn { background-color: rgba(255, 255, 255, 0.1); border: 1px solid rgba(255, 255, 255, 0.2); }
+        .difficulty-btn.selected { background-color: rgba(255, 255, 255, 0.3); box-shadow: 0 0 15px rgba(255,255,255,0.3); transform: translateY(-3px); }
+
+        .player-indicator { margin: 15px 0; padding: 10px; border-radius: 8px; background-color: rgba(255, 255, 255, 0.1); font-weight: bold; display: none; }
+        .player-indicator.active { display: block; animation: pulse 2s infinite; }
+        @keyframes pulse { 0% { box-shadow: 0 0 0 0 rgba(255, 255, 255, 0.4); } 70% { box-shadow: 0 0 0 10px rgba(255, 255, 255, 0); } 100% { box-shadow: 0 0 0 0 rgba(255, 255, 255, 0); } }
+
+        .confetti { position: fixed; width: 10px; height: 10px; background-color: #f00; border-radius: 50%; animation: confetti-fall 5s linear forwards; z-index: 101; }
+        @keyframes confetti-fall { 0% { transform: translateY(-10vh) rotate(0deg); } 100% { transform: translateY(110vh) rotate(720deg); } }
+
+        @media (max-width: 600px) {
+            body { padding: 10px; }
+            .board { grid-template-columns: repeat(4, 1fr); gap: 10px; }
+            .game-container { padding: 15px; }
+            h1 { font-size: 2rem; }
+            .header-bar { justify-content: center; }
+        }
+    </style>
+</head>
+<body>
+    <div class="header-bar">
+        <div class="header-buttons">
+            <a href="/" class="header-btn">Back</a>
+            <button id="newGameHeaderBtn" class="header-btn">New Game</button>
+            <button id="instructionsBtn" class="header-btn">Help</button>
+        </div>
+    </div>
+    <div class="game-container">
+        <h1>Memory Game</h1>
+        <div class="player-indicator" id="playerIndicator"><span id="currentPlayer">Your</span> Turn</div>
+        <div class="stats">
+            <div class="stat">Pairs: <span id="pairsMatched">0</span>/<span id="totalPairs">0</span></div>
+            <div class="stat">Moves: <span id="moveCount">0</span></div>
+            <div class="stat">Time: <span id="timeCount">0</span>s</div>
+        </div>
+        <div class="board" id="board"></div>
+    </div>
+    
+    <div class="modal" id="startModal">
+        <div class="modal-content">
+            <h2>Memory Game</h2>
+            <p>Find all matching pairs. Choose your game mode and difficulty.</p>
+            <div class="game-mode">
+                <label><input type="radio" name="gameMode" value="single" checked> Single Player</label>
+                <label><input type="radio" name="gameMode" value="vsComputer"> Player vs Computer</label>
+            </div>
+            <div class="difficulty-selector">
+                <h3>Select Difficulty</h3>
+                <div class="difficulty-buttons">
+                    <button class="difficulty-btn" data-difficulty="easy">Easy (4 pairs)</button>
+                    <button class="difficulty-btn selected" data-difficulty="medium">Medium (8 pairs)</button>
+                    <button class="difficulty-btn" data-difficulty="hard">Hard (12 pairs)</button>
+                </div>
+            </div>
+            <button id="startGameBtn">Start Game</button>
+        </div>
+    </div>
+    
+    <div class="modal" id="winModal">
+        <div class="modal-content">
+            <h2 id="winTitle">Congratulations!</h2>
+            <div id="finalStats">
+                <p>Moves: <span id="finalMoves">0</span> | Time: <span id="finalTime">0</span>s</p>
+            </div>
+            <div id="playerScores" style="display: none;">
+                <p>You: <span id="player1Score">0</span> pairs</p>
+                <p>Computer: <span id="player2Score">0</span> pairs</p>
+            </div>
+            <button id="playAgainBtn">Play Again</button>
+        </div>
+    </div>
+
+    <div class="modal" id="instructionsModal">
+        <div class="modal-content">
+            <h2>How to Play</h2>
+            <p>Click on a card to flip it over. Find its matching pair on the board. Try to find all the pairs in the fewest moves and least amount of time!</p>
+            <p>In **Player vs Computer** mode, you take turns flipping cards. Finding a pair earns you a point and another turn!</p>
+            <button id="closeInstructionsBtn">Got it!</button>
+        </div>
+    </div>
+
+    <script>
+        // State object to hold all game variables
+        let state = {};
+
+        // DOM Elements
+        const boardElement = document.getElementById('board');
+        const pairsMatchedElement = document.getElementById('pairsMatched');
+        const totalPairsElement = document.getElementById('totalPairs');
+        const moveCountElement = document.getElementById('moveCount');
+        const timeCountElement = document.getElementById('timeCount');
+        const startModal = document.getElementById('startModal');
+        const winModal = document.getElementById('winModal');
+        const instructionsModal = document.getElementById('instructionsModal');
+        const winTitle = document.getElementById('winTitle');
+        const finalMovesElement = document.getElementById('finalMoves');
+        const finalTimeElement = document.getElementById('finalTime');
+        const finalStatsElement = document.getElementById('finalStats');
+        const playerScoresElement = document.getElementById('playerScores');
+        const player1ScoreElement = document.getElementById('player1Score');
+        const player2ScoreElement = document.getElementById('player2Score');
+        const newGameHeaderBtn = document.getElementById('newGameHeaderBtn');
+        const instructionsBtn = document.getElementById('instructionsBtn');
+        const startGameBtn = document.getElementById('startGameBtn');
+        const playAgainBtn = document.getElementById('playAgainBtn');
+        const closeInstructionsBtn = document.getElementById('closeInstructionsBtn');
+        const playerIndicator = document.getElementById('playerIndicator');
+        const currentPlayerElement = document.getElementById('currentPlayer');
+        
+        const emojiSymbols = ['🐶','🐱','🐭','🐹','🐰','🦊','🐻','🐼','🐨','🐯','🦁','🐮','🐷','🐸','🐵','🐔'];
+        
+        function resetGameState() {
+            if (state.timerInterval) clearInterval(state.timerInterval);
+            state = {
+                cards: [],
+                flippedCards: [],
+                matchedPairs: 0,
+                moveCount: 0,
+                timerInterval: null,
+                currentTime: 0,
+                playerTurn: 1,
+                playerScores: [0, 0],
+                boardLocked: false,
+                totalPairs: 8,
+                computerMemory: {},
+                computerDelay: 1000,
+                difficulty: 'medium',
+                gameMode: 'single'
+            };
+        }
+
+        function init() {
+            startModal.style.display = 'flex';
+            newGameHeaderBtn.addEventListener('click', () => { state.boardLocked = true; clearInterval(state.timerInterval); startModal.style.display = 'flex'; });
+            startGameBtn.addEventListener('click', startGame);
+            playAgainBtn.addEventListener('click', () => { winModal.style.display = 'none'; startModal.style.display = 'flex'; });
+            instructionsBtn.addEventListener('click', () => instructionsModal.style.display = 'flex');
+            closeInstructionsBtn.addEventListener('click', () => instructionsModal.style.display = 'none');
+            
+            document.querySelectorAll('[name="gameMode"]').forEach(radio => radio.onchange = (e) => state.gameMode = e.target.value);
+            document.querySelectorAll('.difficulty-btn').forEach(btn => {
+                btn.onclick = (e) => {
+                    state.difficulty = e.target.dataset.difficulty;
+                    document.querySelectorAll('.difficulty-btn').forEach(b => b.classList.remove('selected'));
+                    e.target.classList.add('selected');
+                }
+            });
+        }
+
+        function startGame() {
+            startModal.style.display = 'none';
+            resetGameState(); // Reset state completely
+
+            // Get settings from UI
+            state.gameMode = document.querySelector('input[name="gameMode"]:checked').value;
+            state.difficulty = document.querySelector('.difficulty-btn.selected').dataset.difficulty;
+            
+            state.totalPairs = { easy: 4, medium: 8, hard: 12 }[state.difficulty] || 8;
+            state.computerDelay = { easy: 1200, medium: 800, hard: 500 }[state.difficulty] || 800;
+            
+            updateBoardGrid();
+            
+            const selectedSymbols = shuffleArray(emojiSymbols).slice(0, state.totalPairs);
+            state.cards = shuffleArray([...selectedSymbols, ...selectedSymbols]);
+            
+            boardElement.innerHTML = '';
+            state.cards.forEach((symbol, index) => {
+                const cardElement = document.createElement('div');
+                cardElement.className = 'card';
+                cardElement.dataset.symbol = symbol;
+                cardElement.dataset.index = index;
+                cardElement.innerHTML = `<div class="card-inner"><div class="card-front">${symbol}</div><div class="card-back">?</div></div>`;
+                cardElement.addEventListener('click', () => handleCardClick(cardElement));
+                boardElement.appendChild(cardElement);
+            });
+            
+            updateUI();
+            
+            playerIndicator.classList.toggle('active', state.gameMode === 'vsComputer');
+            
+            const startTime = Date.now();
+            state.timerInterval = setInterval(() => {
+                state.currentTime = Math.floor((Date.now() - startTime) / 1000);
+                updateUI();
+            }, 1000);
+        }
+
+        function updateBoardGrid() {
+            const columns = { 4: 4, 8: 4, 12: 6 }[state.totalPairs] || 4;
+            boardElement.style.gridTemplateColumns = `repeat(${columns}, 1fr)`;
+            const fontSize = { 4: '2.5rem', 8: '2.5rem', 12: '2rem' }[state.totalPairs] || '2.5rem';
+            document.documentElement.style.setProperty('--card-font-size', fontSize);
+        }
+
+        function handleCardClick(cardElement) {
+            if (state.boardLocked || cardElement.classList.contains('flipped') || (state.gameMode === 'vsComputer' && state.playerTurn === 2)) return;
+            
+            cardElement.classList.add('flipped');
+            state.flippedCards.push(cardElement);
+            
+            if (state.gameMode === 'vsComputer') {
+                state.computerMemory[cardElement.dataset.index] = cardElement.dataset.symbol;
+            }
+            
+            if (state.flippedCards.length === 2) {
+                state.boardLocked = true;
+                state.moveCount++;
+                checkMatch();
+            }
+            updateUI();
+        }
+
+        function checkMatch() {
+            const [card1, card2] = state.flippedCards;
+            const isMatch = card1.dataset.symbol === card2.dataset.symbol;
+            
+            card1.classList.add(isMatch ? 'correct' : 'incorrect');
+            card2.classList.add(isMatch ? 'correct' : 'incorrect');
+
+            setTimeout(() => {
+                card1.classList.remove('correct', 'incorrect');
+                card2.classList.remove('correct', 'incorrect');
+
+                if (isMatch) {
+                    state.matchedPairs++;
+                    if (state.gameMode === 'vsComputer') state.playerScores[state.playerTurn - 1]++;
+                    state.flippedCards.forEach(c => c.classList.add('matched'));
+                    state.flippedCards = [];
+                    state.boardLocked = false;
+                    if (state.matchedPairs === state.totalPairs) return endGame();
+                    if (state.gameMode === 'vsComputer' && state.playerTurn === 2) setTimeout(computerTurn, state.computerDelay);
+                } else {
+                    state.flippedCards.forEach(c => c.classList.remove('flipped'));
+                    state.flippedCards = [];
+                    if (state.gameMode === 'vsComputer') {
+                        state.playerTurn = state.playerTurn === 1 ? 2 : 1;
+                        if (state.playerTurn === 2) setTimeout(computerTurn, state.computerDelay);
+                    }
+                    state.boardLocked = false;
+                }
+                updateUI();
+            }, 800);
+        }
+
+        function computerTurn() {
+            if (state.boardLocked) return;
+            state.boardLocked = true;
+            // AI Logic...
+            const memoryValues = Object.values(state.computerMemory);
+            const memoryKeys = Object.keys(state.computerMemory);
+            for (let i = 0; i < memoryValues.length; i++) {
+                for (let j = i + 1; j < memoryValues.length; j++) {
+                    const cardI = boardElement.children[memoryKeys[i]];
+                    const cardJ = boardElement.children[memoryKeys[j]];
+                    if (cardI && cardJ && memoryValues[i] === memoryValues[j] && !cardI.classList.contains('matched')) {
+                        setTimeout(() => handleCardClick(cardI), state.computerDelay / 2);
+                        setTimeout(() => handleCardClick(cardJ), state.computerDelay);
+                        return;
+                    }
+                }
+            }
+            
+            let unflipped = Array.from(boardElement.children).filter(c => !c.classList.contains('flipped') && !c.classList.contains('matched'));
+            const card1 = unflipped[Math.floor(Math.random() * unflipped.length)];
+            unflipped = unflipped.filter(c => c !== card1);
+            const card2 = unflipped[Math.floor(Math.random() * unflipped.length)];
+
+            setTimeout(() => { if(card1) handleCardClick(card1); }, state.computerDelay / 2);
+            setTimeout(() => { if(card2) handleCardClick(card2); }, state.computerDelay);
+        }
+
+        function endGame() {
+            state.boardLocked = true;
+            clearInterval(state.timerInterval);
+            createConfetti();
+            
+            finalMovesElement.textContent = state.moveCount;
+            finalTimeElement.textContent = state.currentTime;
+            
+            if (state.gameMode === 'vsComputer') {
+                playerScoresElement.style.display = 'block';
+                finalStatsElement.style.display = 'none';
+                player1ScoreElement.textContent = state.playerScores[0];
+                player2ScoreElement.textContent = state.playerScores[1];
+                winTitle.textContent = state.playerScores[0] > state.playerScores[1] ? 'You Win!' : (state.playerScores[1] > state.playerScores[0] ? 'Computer Wins!' : "It's a Tie!");
+            } else {
+                playerScoresElement.style.display = 'none';
+                finalStatsElement.style.display = 'block';
+                winTitle.textContent = 'Congratulations!';
+            }
+            winModal.style.display = 'flex';
+        }
+        
+        function createConfetti() {
+            for (let i = 0; i < 50; i++) {
+                const confetti = document.createElement('div');
+                confetti.className = 'confetti';
+                confetti.style.left = Math.random() * 100 + 'vw';
+                confetti.style.backgroundColor = `hsl(${Math.random() * 360}, 100%, 50%)`;
+                confetti.style.animationDuration = Math.random() * 3 + 2 + 's';
+                confetti.style.animationDelay = Math.random() * 2 + 's';
+                document.body.appendChild(confetti);
+                setTimeout(() => confetti.remove(), 5000);
+            }
+        }
+
+        function updateUI() {
+            pairsMatchedElement.textContent = state.matchedPairs;
+            totalPairsElement.textContent = state.totalPairs;
+            moveCountElement.textContent = state.moveCount;
+            timeCountElement.textContent = state.currentTime;
+            if (state.gameMode === 'vsComputer') {
+                currentPlayerElement.textContent = state.playerTurn === 1 ? "Your" : "Computer's";
+            }
+        }
+        
+        function shuffleArray(array) {
+            for (let i = array.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                [array[i], array[j]] = [array[j], array[i]];
+            }
+            return array;
+        }
+        
+        window.onload = init;
+    </script>
+</body>
+</html>

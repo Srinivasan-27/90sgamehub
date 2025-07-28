@@ -1,0 +1,860 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <title>Monopoly Game</title>
+    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;700&family=Oswald:wght@700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.1.1/css/all.min.css">
+    <style>
+        :root {
+            --board-color: #cde6d0;
+            --board-accent: #a4d4ae;
+            --dark-green: #1b5e20;
+        }
+        body, html {
+            font-family: 'Roboto', sans-serif;
+            background-color: #e8f5e9;
+            margin: 0;
+            padding: 10px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            height: 100vh;
+            box-sizing: border-box;
+            overflow: hidden;
+        }
+        .setup-screen {
+            background-color: white; padding: 30px; border-radius: 15px;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.1); text-align: center;
+            animation: fadeIn 0.5s;
+            width: 90%; max-width: 500px;
+        }
+        @keyframes fadeIn { from { opacity: 0; transform: scale(0.95); } to { opacity: 1; transform: scale(1); } }
+        .setup-screen h1 { font-family: 'Oswald', sans-serif; font-size: 2.8rem; color: var(--dark-green); letter-spacing: 2px; }
+        
+        button, .header-btn {
+            padding: 12px 25px; background-color: #4CAF50; color: white;
+            border: none; border-radius: 8px; cursor: pointer;
+            font-size: 1rem; margin: 5px; transition: all 0.3s;
+            font-weight: bold; box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+            text-decoration: none;
+        }
+        button:hover, .header-btn:hover { background-color: #45a049; transform: translateY(-2px); box-shadow: 0 5px 10px rgba(0,0,0,0.3); }
+        button:disabled { background-color: #cccccc; cursor: not-allowed; transform: none; box-shadow: none; }
+        button.selected { background-color: #2E7D32; }
+        .setup-options > div { margin-top: 20px; }
+
+        .game-container { display: none; width: 100%; max-width: 1400px; height: calc(100% - 60px); }
+        .main-layout { display: flex; gap: 20px; height: 100%; }
+        .board-container { flex: 3; display: flex; align-items: center; justify-content: center; }
+        .board {
+            max-width: 85vh;
+            max-height: 85vh;
+            width: 100%;
+            aspect-ratio: 1/1;
+            position: relative;
+            background-color: var(--board-color);
+            border: 2px solid #333;
+            display: grid;
+            grid-template-columns: 1.5fr repeat(9, 1fr) 1.5fr;
+            grid-template-rows: 1.5fr repeat(9, 1fr) 1.5fr;
+        }
+        .center-area {
+            grid-column: 2 / span 9; grid-row: 2 / span 9;
+            background-color: var(--board-accent); border: 1px solid #aaa;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-around; /* Changed from center to prevent overlap */
+            align-items: center;
+            text-align: center;
+            padding: 10px 0; /* Added vertical padding */
+        }
+        .center-logo { font-family: 'Oswald', sans-serif; font-size: clamp(2rem, 10vmin, 4rem); color: #d32f2f; text-shadow: 2px 2px #fff; transform: rotate(-45deg); }
+        .dice-roll-display { font-size: 1.2rem; margin-top: 15px; font-weight: bold; color: var(--dark-green); padding: 0 10px; }
+
+        .space {
+            border: 1px solid #999; font-size: clamp(6px, 1.2vmin, 9px); text-align: center;
+            display: flex; position: relative; cursor: pointer; background-color: var(--board-color);
+            overflow: hidden;
+        }
+        .space .name { padding: 2px; font-weight: bold; word-break: break-word; line-height: 1.1; }
+        .space .price { font-weight: normal; }
+        .space .owner-indicator { position: absolute; bottom: 0; left: 0; right: 0; height: 5px; display: flex; }
+        .house-indicator { width: 20%; height: 100%; background-color: #00ff00; border: 1px solid #008000; }
+        .hotel-indicator { width: 100%; height: 100%; background-color: #ff0000; border: 1px solid #8b0000; }
+        .row-space { flex-direction: column; justify-content: flex-start; }
+        .row-space .color-bar { height: 20%; width: 100%; border-bottom: 1px solid #999; }
+        .col-space { flex-direction: row; align-items: stretch; }
+        .col-space .color-bar { width: 20%; height: 100%; }
+        .col-space .details { writing-mode: vertical-rl; text-orientation: mixed; display: flex; flex-direction: column; justify-content: space-around; align-items: center; flex-grow: 1; padding: 2px; }
+        .col-space[data-pos-c="0"] .color-bar { border-right: 1px solid #999; }
+        .col-space[data-pos-c="10"] .color-bar { border-left: 1px solid #999; order: 1; }
+        .col-space[data-pos-c="10"] .details { transform: rotate(180deg); }
+        .space.mortgaged { background-color: #a0a0a0 !important; opacity: 0.7; }
+
+        .player {
+            width: 22px; height: 22px; border-radius: 50%;
+            position: absolute; z-index: 10; border: 2px solid white;
+            transition: all 0.15s linear;
+            display: flex; justify-content: center; align-items: center;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.4);
+        }
+        .player-icon { color: white; font-size: 10px; }
+
+        .right-panel { flex: 1; min-width: 300px; display: flex; flex-direction: column; gap: 15px; background: #f5f5f5; padding: 10px; border-radius: 10px; }
+        .player-card { background-color: #fff; border-radius: 10px; padding: 10px; box-shadow: 0 2px 8px rgba(0,0,0,0.1); border: 3px solid transparent; transition: all 0.3s; }
+        .player-card.active { border-color: var(--dark-green); transform: scale(1.02); }
+        .player-card.bankrupt { opacity: 0.5; background-color: #eee; }
+        .player-card h3 { margin: 0 0 10px 0; display: flex; align-items: center; gap: 8px; font-size: 1rem; }
+        .player-color-indicator { width: 16px; height: 16px; border-radius: 50%; }
+        .player-jail-card { font-size: 0.8rem; color: #d32f2f; font-weight: bold; margin-top: 5px; }
+        
+        .controls-panel { background: #fff; padding: 15px; border-radius: 10px; box-shadow: 0 5px 15px rgba(0,0,0,0.1); }
+        .dice-container { display: flex; gap: 10px; justify-content: center; margin-bottom: 15px; perspective: 1000px; }
+        .dice { width: 40px; height: 40px; position: relative; transform-style: preserve-3d; transition: transform 1s; }
+        .dice-face { position: absolute; width: 40px; height: 40px; background: #fff; border: 2px solid #333; display: flex; justify-content: center; align-items: center; font-size: 20px; font-weight: bold; }
+        .face-1 { transform: rotateY(0deg) translateZ(20px); } .face-6 { transform: rotateY(180deg) translateZ(20px); }
+        .face-2 { transform: rotateX(90deg) translateZ(20px); } .face-5 { transform: rotateX(-90deg) translateZ(20px); }
+        .face-3 { transform: rotateY(90deg) translateZ(20px); } .face-4 { transform: rotateY(-90deg) translateZ(20px); }
+        
+        .modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background-color: rgba(0,0,0,0.6); z-index: 100; justify-content: center; align-items: center; }
+        .modal-content { background-color: white; padding: 25px; border-radius: 15px; width: 90%; max-width: 500px; box-shadow: 0 10px 30px rgba(0,0,0,0.3); animation: fadeIn 0.3s; max-height: 80vh; overflow-y: auto;}
+        .modal-content h2 { margin-top: 0; }
+        .modal-actions { margin-top: 20px; display: flex; justify-content: flex-end; gap: 10px; flex-wrap: wrap; }
+        
+        .property-card-modal { text-align: center; border: 2px solid #333; }
+        .property-card-modal .color-bar { height: 50px; border-bottom: 2px solid #333; margin: -25px -25px 15px -25px; }
+        .property-card-modal h2 { font-size: 1.2rem; }
+        .rent-table { width: 100%; text-align: left; margin-top: 10px; border-collapse: collapse;}
+        .rent-table td { padding: 4px; border-bottom: 1px solid #eee; }
+        .rent-table td:last-child { text-align: right; font-weight: bold; }
+
+        .header-bar { width: 100%; display: flex; justify-content: space-between; align-items: center; padding-bottom: 15px; }
+        .info-toggle-btn { display: none; }
+
+        @media (max-width: 900px) {
+            .main-layout { position: relative; }
+            .right-panel { position: fixed; top: 0; right: 0; height: 100%; width: 280px; transform: translateX(100%); transition: transform 0.3s ease-in-out; z-index: 99; overflow-y: auto; }
+            .right-panel.open { transform: translateX(0); }
+            .info-toggle-btn { display: block; }
+            body { padding: 5px; }
+        }
+    </style>
+</head>
+<body>
+    <div class="setup-screen" id="setup-screen">
+        <h1>Monopoly</h1>
+        <div class="setup-options">
+            <div id="game-mode-selection">
+                <h3>Select Game Mode:</h3>
+                <button id="play-computer-btn">Play with Computer</button>
+                <button id="play-friends-btn">Play with Friends</button>
+            </div>
+            <div id="player-count-selection" style="display: none;">
+                <h3>Number of Players:</h3>
+                <button data-count="2" class="player-count-btn selected">2 Players</button>
+                <button data-count="3" class="player-count-btn">3 Players</button>
+                <button data-count="4" class="player-count-btn">4 Players</button>
+            </div>
+        </div>
+        <button id="start-game" style="display: none; margin-top: 20px;">Start Game</button>
+    </div>
+    
+    <div class="game-container" id="game-container">
+        <div class="header-bar">
+             <h1 style="margin:0; font-size: 1.5rem;">Monopoly</h1>
+            <div class="header-buttons">
+                <button id="infoToggleBtn" class="header-btn info-toggle-btn">Player Info</button>
+                <a href="/" class="header-btn">Back</a>
+                <button id="newGameBtn" class="header-btn">New Game</button>
+                <button id="instructionsBtn" class="header-btn">Help</button>
+            </div>
+        </div>
+        <div class="main-layout">
+            <div class="board-container">
+                <div class="board" id="board"></div>
+            </div>
+            <div class="right-panel" id="right-panel">
+                <div class="controls-panel">
+                    <div class="dice-container">
+                        <div class="dice" id="dice1"><div class="dice-face face-1">1</div><div class="dice-face face-2">2</div><div class="dice-face face-3">3</div><div class="dice-face face-4">4</div><div class="dice-face face-5">5</div><div class="dice-face face-6">6</div></div>
+                        <div class="dice" id="dice2"><div class="dice-face face-1">1</div><div class="dice-face face-2">2</div><div class="dice-face face-3">3</div><div class="dice-face face-4">4</div><div class="dice-face face-5">5</div><div class="dice-face face-6">6</div></div>
+                    </div>
+                    <div class="controls">
+                        <button id="roll-dice-btn">Roll Dice</button>
+                        <button id="manage-properties-btn">Manage Properties</button>
+                        <button id="end-turn-btn" disabled>End Turn</button>
+                    </div>
+                </div>
+                <div class="player-info" id="player-info"></div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="modal" id="action-modal"><div class="modal-content" id="modal-content"></div></div>
+    <div class="modal" id="instructions-modal"><div class="modal-content"><h2>How to Play</h2><p>The goal of the game is to become the wealthiest player by buying, renting, and trading properties. <br><br><b>On your turn:</b> Roll the dice and move your token. If you land on an unowned property, you may buy it. If it's owned by another player, you must pay them rent. Landing on card spaces requires you to draw a card and follow its instructions. <br><br><b>Doubles:</b> Rolling doubles lets you roll again. Three doubles in a row sends you to jail. <br><br><b>Monopolies:</b> Owning all properties in a color group gives you a monopoly, allowing you to build houses and hotels to charge much higher rent. <br><br><b>Bankruptcy:</b> If you can't pay a debt, you are bankrupt and out of the game!</p><button id="close-instructions-btn">Close</button></div></div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            let state = {};
+            const boardSpaces=[{name:"GO",type:"go"},{name:"Mediterranean Ave",type:"property",price:60,color:"#a52a2a",rent:[2,10,30,90,160,250],houseCost:50},{name:"Community Chest",type:"chest"},{name:"Baltic Ave",type:"property",price:60,color:"#a52a2a",rent:[4,20,60,180,320,450],houseCost:50},{name:"Income Tax",type:"tax",amount:200},{name:"Reading Railroad",type:"railroad",price:200},{name:"Oriental Ave",type:"property",price:100,color:"#87ceeb",rent:[6,30,90,270,400,550],houseCost:50},{name:"Chance",type:"chance"},{name:"Vermont Ave",type:"property",price:100,color:"#87ceeb",rent:[6,30,90,270,400,550],houseCost:50},{name:"Connecticut Ave",type:"property",price:120,color:"#87ceeb",rent:[8,40,100,300,450,600],houseCost:50},{name:"Jail",type:"jail"},{name:"St. Charles Place",type:"property",price:140,color:"#d80073",rent:[10,50,150,450,625,750],houseCost:100},{name:"Electric Company",type:"utility",price:150},{name:"States Ave",type:"property",price:140,color:"#d80073",rent:[10,50,150,450,625,750],houseCost:100},{name:"Virginia Ave",type:"property",price:160,color:"#d80073",rent:[12,60,180,500,700,900],houseCost:100},{name:"Pennsylvania Railroad",type:"railroad",price:200},{name:"St. James Place",type:"property",price:180,color:"#ffa500",rent:[14,70,200,550,750,950],houseCost:100},{name:"Community Chest",type:"chest"},{name:"Tennessee Ave",type:"property",price:180,color:"#ffa500",rent:[14,70,200,550,750,950],houseCost:100},{name:"New York Ave",type:"property",price:200,color:"#ffa500",rent:[16,80,220,600,800,1000],houseCost:100},{name:"Free Parking",type:"parking"},{name:"Kentucky Ave",type:"property",price:220,color:"#ff0000",rent:[18,90,250,700,875,1050],houseCost:150},{name:"Chance",type:"chance"},{name:"Indiana Ave",type:"property",price:220,color:"#ff0000",rent:[18,90,250,700,875,1050],houseCost:150},{name:"Illinois Ave",type:"property",price:240,color:"#ff0000",rent:[20,100,300,750,925,1100],houseCost:150},{name:"B. & O. Railroad",type:"railroad",price:200},{name:"Atlantic Ave",type:"property",price:260,color:"#ffff00",rent:[22,110,330,800,975,1150],houseCost:150},{name:"Ventnor Ave",type:"property",price:260,color:"#ffff00",rent:[22,110,330,800,975,1150],houseCost:150},{name:"Water Works",type:"utility",price:150},{name:"Marvin Gardens",type:"property",price:280,color:"#ffff00",rent:[24,120,360,850,1025,1200],houseCost:150},{name:"Go to Jail",type:"go-to-jail"},{name:"Pacific Ave",type:"property",price:300,color:"#008000",rent:[26,130,390,900,1100,1275],houseCost:200},{name:"North Carolina Ave",type:"property",price:300,color:"#008000",rent:[26,130,390,900,1100,1275],houseCost:200},{name:"Community Chest",type:"chest"},{name:"Pennsylvania Ave",type:"property",price:320,color:"#008000",rent:[28,150,450,1000,1200,1400],houseCost:200},{name:"Short Line",type:"railroad",price:200},{name:"Chance",type:"chance"},{name:"Park Place",type:"property",price:350,color:"#0000ff",rent:[35,175,500,1100,1300,1500],houseCost:200},{name:"Luxury Tax",type:"tax",amount:100},{name:"Boardwalk",type:"property",price:400,color:"#0000ff",rent:[50,200,600,1400,1700,2000],houseCost:200}];
+            const chanceCards = [{text:"Advance to GO. (Collect $200)",action: async (p)=>{ await movePlayerTo(p,0,true);}},{text:"Bank pays you dividend of $50",action:(p)=>{p.money+=50;}},{text:"Go to Jail. Go directly to Jail.",action:(p)=>{goToJail(p);}},{text:"Pay poor tax of $15",action:(p)=>{p.money-=15;}},{text:"You have won a crossword competition. Collect $100",action:(p)=>{p.money+=100;}}];
+            const communityChestCards = [{text:"Bank error in your favor. Collect $200",action:(p)=>{p.money+=200;}},{text:"Doctor's fees. Pay $50",action:(p)=>{p.money-=50;}},{text:"From sale of stock you get $50",action:(p)=>{p.money+=50;}},{text:"Get Out of Jail Free.",action:(p)=>{p.getOutOfJailCards++;}},{text:"Holiday fund matures. Receive $100",action:(p)=>{p.money+=100;}}];
+            
+            const dom = { setupScreen: document.getElementById('setup-screen'), gameContainer: document.getElementById('game-container'), board: document.getElementById('board'), playerInfo: document.getElementById('player-info'), rollDiceBtn: document.getElementById('roll-dice-btn'), endTurnBtn: document.getElementById('end-turn-btn'), managePropertiesBtn: document.getElementById('manage-properties-btn'), actionModal: document.getElementById('action-modal'), modalContent: document.getElementById('modal-content'), instructionsModal: document.getElementById('instructions-modal'), dice1: document.getElementById('dice1'), dice2: document.getElementById('dice2'), rightPanel: document.getElementById('right-panel'), infoToggleBtn: document.getElementById('infoToggleBtn') };
+            let gameMode = 'computer';
+
+            // --- Game Logic Functions ---
+            
+            // Setup and Initialization
+            function initSetup() {
+                let playerCount = 2;
+                document.getElementById('play-computer-btn').addEventListener('click', () => { gameMode = 'computer'; showPlayerSelection(); });
+                document.getElementById('play-friends-btn').addEventListener('click', () => { gameMode = 'friends'; showPlayerSelection(); });
+
+                function showPlayerSelection() {
+                    document.getElementById('game-mode-selection').style.display = 'none';
+                    document.getElementById('player-count-selection').style.display = 'block';
+                    document.getElementById('start-game').style.display = 'inline-block';
+                }
+
+                document.querySelectorAll('.player-count-btn').forEach(btn => {
+                    btn.addEventListener('click', (e) => {
+                        playerCount = parseInt(e.target.dataset.count);
+                        document.querySelectorAll('.player-count-btn').forEach(b => b.classList.remove('selected'));
+                        e.target.classList.add('selected');
+                    });
+                });
+                
+                document.getElementById('start-game').addEventListener('click', () => {
+                    dom.setupScreen.style.display = 'none';
+                    dom.gameContainer.style.display = 'flex';
+                    dom.gameContainer.style.flexDirection = 'column';
+                    startGame(playerCount);
+                });
+            }
+
+            function initGameControls() {
+                document.getElementById('newGameBtn').addEventListener('click', () => window.location.reload());
+                document.getElementById('instructionsBtn').addEventListener('click', () => dom.instructionsModal.style.display = 'flex');
+                document.getElementById('close-instructions-btn').addEventListener('click', () => closeModal('instructions-modal'));
+                dom.rollDiceBtn.addEventListener('click', handleRollDice);
+                dom.endTurnBtn.addEventListener('click', endTurn);
+                dom.managePropertiesBtn.addEventListener('click', showManagePropertiesModal);
+                dom.infoToggleBtn.addEventListener('click', () => dom.rightPanel.classList.toggle('open'));
+            }
+            
+            function startGame(playerCount) {
+                resetState(playerCount);
+                renderBoard();
+                renderPlayerPieces();
+                updateAllUI();
+                startTurn();
+            }
+
+            function resetState(playerCount) {
+                const colors = ['#d32f2f', '#1976d2', '#388e3c', '#fbc02d'];
+                const icons = ['fas fa-car-side', 'fas fa-ship', 'fas fa-dog', 'fas fa-hat-wizard'];
+                state = {
+                    players: Array(playerCount).fill().map((_, i) => {
+                        const isAI = gameMode === 'computer' && i > 0;
+                        let name;
+                        if (gameMode === 'friends') name = `Player ${i + 1}`;
+                        else name = i === 0 ? "You" : `CPU ${i}`;
+                        return { id: i, name, money: 1500, position: 0, properties: [], inJail: 0, getOutOfJailCards: 0, color: colors[i], icon: icons[i], isAI, bankrupt: false };
+                    }),
+                    properties: boardSpaces.map((prop, i) => ({ ...prop, id: i, owner: null, houses: 0, mortgaged: false })),
+                    currentPlayerIndex: 0, diceRolled: false, doublesCount: 0, taxPot: 0, lastDiceRoll: [0, 0]
+                };
+            }
+
+            // Rendering and UI Updates
+            function renderBoard() {
+                dom.board.innerHTML = `<div class="center-area"><div class="center-logo">Monopoly</div><div id="dice-roll-display" class="dice-roll-display"></div></div>`;
+                const gridPositions = [[10,10],[10,9],[10,8],[10,7],[10,6],[10,5],[10,4],[10,3],[10,2],[10,1],[10,0],[9,0],[8,0],[7,0],[6,0],[5,0],[4,0],[3,0],[2,0],[1,0],[0,0],[0,1],[0,2],[0,3],[0,4],[0,5],[0,6],[0,7],[0,8],[0,9],[0,10],[1,10],[2,10],[3,10],[4,10],[5,10],[6,10],[7,10],[8,10],[9,10]];
+                state.properties.forEach((prop, i) => {
+                    const space = document.createElement('div');
+                    space.className = 'space';
+                    space.dataset.pos = i;
+                    const [r, c] = gridPositions[i];
+                    space.style.gridRow = r + 1;
+                    space.style.gridColumn = c + 1;
+                    const onTopOrBottom = r === 0 || r === 10;
+                    space.classList.add(onTopOrBottom ? 'row-space' : 'col-space');
+                    space.dataset.posR = r; space.dataset.posC = c;
+                    
+                    const action = () => showPropertyCard(prop.id);
+                    space.addEventListener('click', action);
+                    space.addEventListener('touchend', (e) => {
+                        e.preventDefault();
+                        action();
+                    });
+                    
+                    let content = `<div class="name">${prop.name}</div>`;
+                    if (prop.price) content += `<div class="price">$${prop.price}</div>`;
+                    
+                    if (prop.color) {
+                        const colorBar = document.createElement('div');
+                        colorBar.className = 'color-bar';
+                        colorBar.style.backgroundColor = prop.color;
+                        onTopOrBottom ? space.prepend(colorBar) : space.append(colorBar);
+                    } else { space.classList.add('corner'); }
+                    
+                    const detailsDiv = document.createElement('div');
+                    detailsDiv.className = 'details';
+                    detailsDiv.innerHTML = content;
+                    space.appendChild(detailsDiv);
+                    if (!onTopOrBottom) {
+                         const rotation = c === 0 ? 'rotate(90deg)' : 'rotate(-90deg)';
+                         detailsDiv.style.transform = rotation;
+                    }
+                    
+                    const ownerIndicator = document.createElement('div');
+                    ownerIndicator.id = `owner-${i}`;
+                    ownerIndicator.className = 'owner-indicator';
+                    space.appendChild(ownerIndicator);
+                    dom.board.appendChild(space);
+                });
+            }
+
+            function renderPlayerPieces() {
+                state.players.forEach(p => {
+                    const piece = document.createElement('div');
+                    piece.id = `player-${p.id}`;
+                    piece.className = 'player';
+                    piece.style.backgroundColor = p.color;
+                    piece.innerHTML = `<div class="${p.icon} player-icon"></div>`;
+                    dom.board.appendChild(piece);
+                    updatePlayerPosition(p);
+                });
+            }
+            
+            function updateAllUI() {
+                dom.playerInfo.innerHTML = '';
+                state.players.forEach(p => {
+                    const card = document.createElement('div');
+                    card.className = `player-card ${p.bankrupt ? 'bankrupt' : ''}`;
+                    if (p.id === state.currentPlayerIndex && !p.bankrupt) card.classList.add('active');
+                    let jailCardInfo = p.getOutOfJailCards > 0 ? `<div class="player-jail-card">Jail Cards: ${p.getOutOfJailCards}</div>` : '';
+                    card.innerHTML = `<h3><span class="player-color-indicator" style="background-color:${p.color};"></span>${p.name}</h3><p>Money: $${p.money}</p>${jailCardInfo}`;
+                    dom.playerInfo.appendChild(card);
+                });
+
+                const player = getCurrentPlayer();
+                const isHumanTurn = !player.isAI;
+                const isDouble = state.lastDiceRoll[0] > 0 && state.lastDiceRoll[0] === state.lastDiceRoll[1];
+                
+                dom.rollDiceBtn.disabled = state.diceRolled || !isHumanTurn || player.bankrupt;
+                dom.endTurnBtn.disabled = !state.diceRolled || !isHumanTurn || player.bankrupt || isDouble;
+                dom.managePropertiesBtn.disabled = !isHumanTurn || player.bankrupt || player.properties.length === 0;
+
+                state.properties.forEach(p => {
+                    const ownerIndicator = document.getElementById(`owner-${p.id}`);
+                    const spaceEl = document.querySelector(`.space[data-pos="${p.id}"]`);
+                    if(ownerIndicator) {
+                        ownerIndicator.style.backgroundColor = p.owner !== null ? state.players[p.owner].color : 'transparent';
+                        if (p.houses > 0) {
+                            ownerIndicator.innerHTML = '';
+                            if (p.houses === 5) { // Hotel
+                                ownerIndicator.innerHTML = '<div class="hotel-indicator"></div>';
+                            } else { // Houses
+                                for(let i=0; i < p.houses; i++) {
+                                    ownerIndicator.innerHTML += '<div class="house-indicator"></div>';
+                                }
+                            }
+                        } else {
+                            ownerIndicator.innerHTML = '';
+                        }
+                    }
+                    if (spaceEl) {
+                        if (p.mortgaged) spaceEl.classList.add('mortgaged');
+                        else spaceEl.classList.remove('mortgaged');
+                    }
+                });
+            }
+
+            function updatePlayerPosition(player) {
+                const piece = document.getElementById(`player-${player.id}`);
+                const spaceEl = document.querySelector(`.space[data-pos="${player.position}"]`);
+                if (piece && spaceEl) {
+                   const offset = player.id * 5;
+                   const centerX = spaceEl.offsetLeft + spaceEl.offsetWidth / 2 - piece.offsetWidth / 2;
+                   const centerY = spaceEl.offsetTop + spaceEl.offsetHeight / 2 - piece.offsetHeight / 2;
+                   piece.style.top = `${centerY + offset - (state.players.length * 2.5)}px`;
+                   piece.style.left = `${centerX + offset - (state.players.length * 2.5)}px`;
+                }
+            }
+
+            // Core Game Flow
+            function startTurn() {
+                const player = getCurrentPlayer();
+                if(player.bankrupt) {
+                    endTurn();
+                    return;
+                }
+                
+                state.lastDiceRoll = [0, 0];
+                updateAllUI();
+
+                if (gameMode === 'friends' && !player.isAI) {
+                    showActionModal(`It's ${player.name}'s turn!`, [{ text: "Start Turn", action: () => {
+                        closeModal();
+                        prepareForRoll();
+                    }}]);
+                } else {
+                    prepareForRoll();
+                }
+            }
+            
+            function prepareForRoll() {
+                const player = getCurrentPlayer();
+                showLogMessage(`${player.name}, it's your turn to roll.`);
+                if (player.inJail > 0) {
+                    handleJailTurn(player);
+                    return;
+                }
+                updateAllUI();
+                if (player.isAI) setTimeout(handleRollDice, 1500);
+            }
+
+            async function handleRollDice() {
+                if (state.diceRolled) return;
+                state.diceRolled = true;
+                
+                const d1 = Math.floor(Math.random() * 6) + 1;
+                const d2 = Math.floor(Math.random() * 6) + 1;
+                state.lastDiceRoll = [d1, d2];
+                
+                showLogMessage(`${getCurrentPlayer().name} rolled a ${d1 + d2}!`);
+                
+                const diceAnims = [null,{transform:'rotateY(0deg) translateZ(20px)'},{transform:'rotateX(90deg) translateZ(20px)'},{transform:'rotateY(90deg) translateZ(20px)'},{transform:'rotateY(-90deg) translateZ(20px)'},{transform:'rotateX(-90deg) translateZ(20px)'},{transform:'rotateY(180deg) translateZ(20px)'}];
+                dom.dice1.style.transform = `rotateX(${Math.random()*1440+360}deg) rotateY(${Math.random()*1440+360}deg)`;
+                dom.dice2.style.transform = `rotateX(-${Math.random()*1440+360}deg) rotateY(-${Math.random()*1440+360}deg)`;
+                
+                await new Promise(res => setTimeout(res, 1000));
+                dom.dice1.style.transform = diceAnims[d1].transform;
+                dom.dice2.style.transform = diceAnims[d2].transform;
+
+                const player = getCurrentPlayer();
+                const isDouble = d1 === d2;
+
+                if (isDouble) {
+                    state.doublesCount++;
+                } else {
+                    state.doublesCount = 0;
+                }
+
+                if (state.doublesCount === 3) {
+                    showLogMessage(`${player.name} rolled doubles 3 times. Go to Jail!`);
+                    goToJail(player);
+                    return; // Turn ends immediately
+                }
+
+                await movePlayer(player, d1 + d2);
+                await handleLanding();
+            }
+
+            async function handleLanding() {
+                const player = getCurrentPlayer();
+                const property = state.properties[player.position];
+                const owner = property.owner !== null ? state.players[property.owner] : null;
+                let actionTaken = false;
+
+                const concludeAction = () => {
+                    const isDouble = state.lastDiceRoll[0] === state.lastDiceRoll[1];
+                    updateAllUI();
+                    if (player.inJail || !isDouble) {
+                        if (!player.isAI) {
+                           dom.endTurnBtn.disabled = false;
+                        } else {
+                           setTimeout(endTurn, 1000);
+                        }
+                    } else {
+                        showLogMessage(`${player.name} rolled doubles! Roll again.`);
+                        state.diceRolled = false;
+                        prepareForRoll();
+                    }
+                };
+                
+                if ((property.type === 'property' || property.type === 'railroad' || property.type === 'utility') && !owner) {
+                    actionTaken = true;
+                    const performBuy = () => {
+                        closeModal();
+                        buyProperty();
+                        concludeAction();
+                    };
+                    const declineBuy = () => {
+                        closeModal();
+                        concludeAction();
+                    }
+                    if (player.isAI) { 
+                        if (player.money > property.price && (player.money - property.price > 200)) {
+                            performBuy();
+                        } else {
+                            concludeAction();
+                        }
+                    } else { 
+                        showActionModal(`Buy ${property.name} for $${property.price}?`, [{text: "Buy", action: performBuy}, {text: "Decline", action: declineBuy}]); 
+                    }
+                } else if (owner && owner.id !== player.id && !property.mortgaged) {
+                    actionTaken = true;
+                    const rent = calculateRent(property, state.lastDiceRoll[0] + state.lastDiceRoll[1]);
+                    showLogMessage(`${player.name} pays $${rent} rent to ${owner.name}.`);
+                    await handlePayment(player, owner, rent, concludeAction);
+                } else if (property.type === 'go-to-jail') {
+                    actionTaken = true; 
+                    goToJail(player);
+                } else if (property.type === 'tax') {
+                    actionTaken = true;
+                    showLogMessage(`${player.name} pays $${property.amount} in taxes.`);
+                    await handlePayment(player, null, property.amount, concludeAction);
+                    state.taxPot += property.amount;
+                } else if (property.type === 'parking') {
+                    actionTaken = true;
+                    const pot = state.taxPot;
+                    showLogMessage(`${player.name} collected $${pot} from Free Parking!`);
+                    player.money += pot;
+                    state.taxPot = 0;
+                    showActionModal(`${player.name} collected $${pot} from Free Parking!`, [{text: "OK", action: () => { closeModal(); concludeAction(); }}]);
+                } else if (property.type === 'chance' || property.type === 'chest') {
+                    actionTaken = true;
+                    await drawCard(player, property.type, concludeAction);
+                }
+                
+                if (!actionTaken) {
+                    concludeAction();
+                }
+            }
+
+            async function movePlayer(player, steps) {
+                dom.rollDiceBtn.disabled = true;
+                dom.endTurnBtn.disabled = true;
+                for (let i = 0; i < steps; i++) {
+                    let oldPos = player.position;
+                    player.position = (player.position + 1) % 40;
+                    updatePlayerPosition(player);
+                    if (player.position < oldPos) { 
+                         player.money += 200;
+                         showLogMessage(`${player.name} passed GO and collected $200.`);
+                         updateAllUI(); 
+                    }
+                    await new Promise(res => setTimeout(res, 150));
+                }
+            }
+
+            function endTurn() {
+                closeModal();
+                const activePlayers = state.players.filter(p => !p.bankrupt);
+                if (activePlayers.length <= 1) {
+                    showActionModal(`${activePlayers[0].name} wins the game!`, [{text: "New Game", action: () => window.location.reload()}]);
+                    return;
+                }
+                
+                do {
+                    state.currentPlayerIndex = (state.currentPlayerIndex + 1) % state.players.length;
+                } while (getCurrentPlayer().bankrupt);
+                
+                state.diceRolled = false;
+                state.doublesCount = 0;
+                startTurn();
+            }
+
+            // Player Actions (Buy, Pay, Cards, Jail)
+            function buyProperty() {
+                const p = getCurrentPlayer();
+                const prop = state.properties[p.position];
+                if (p.money >= prop.price) {
+                    p.money -= prop.price;
+                    prop.owner = p.id;
+                    p.properties.push(prop.id);
+                    showLogMessage(`${p.name} bought ${prop.name}.`);
+                }
+            }
+
+            async function handlePayment(payer, creditor, amount, callback) {
+                if (payer.money >= amount) {
+                    payer.money -= amount;
+                    if (creditor) creditor.money += amount;
+                    showActionModal(`${payer.name} ${creditor ? `paid ${creditor.name}` : 'paid'} $${amount}.`, [{ text: "OK", action: () => { closeModal(); callback(); } }]);
+                } else {
+                    handleBankruptcy(payer, creditor);
+                    showActionModal(`${payer.name} went bankrupt trying to pay $${amount}!`, [{ text: "Continue", action: () => { closeModal(); callback(); } }]);
+                }
+            }
+            
+            function handleBankruptcy(player, creditor) {
+                player.money = 0; player.bankrupt = true;
+                showLogMessage(`${player.name} has gone bankrupt!`);
+                player.properties.forEach(propId => {
+                    const prop = state.properties[propId];
+                    if (creditor) {
+                        prop.owner = creditor.id;
+                        creditor.properties.push(propId);
+                    } else {
+                        prop.owner = null;
+                        prop.mortgaged = false;
+                        prop.houses = 0;
+                    }
+                });
+                player.properties = [];
+                document.getElementById(`player-${player.id}`).style.display = 'none';
+            }
+
+            async function drawCard(player, type, concludeAction) {
+                const deck = type === 'chance' ? chanceCards : communityChestCards;
+                const card = deck[Math.floor(Math.random() * deck.length)];
+
+                const actionWrapper = async () => {
+                    closeModal();
+                    const isTerminalAction = card.text.includes("Jail");
+                    
+                    await card.action(player);
+            
+                    if (!isTerminalAction) {
+                        concludeAction();
+                    }
+                };
+                showActionModal(`<strong>${type.toUpperCase()}:</strong><br>${card.text}`, [{text: "OK", action: actionWrapper }]);
+            }
+
+            async function movePlayerTo(player, targetPosition, collectGoMoney) {
+                if (collectGoMoney && targetPosition < player.position) {
+                    player.money += 200;
+                    showLogMessage(`${player.name} passed GO and collected $200.`);
+                }
+                player.position = targetPosition;
+                updatePlayerPosition(player);
+                await new Promise(res => setTimeout(res, 200));
+            }
+            
+            function goToJail(player) {
+                if(player.inJail > 0) return;
+                player.position = 10;
+                player.inJail = 3;
+                state.doublesCount = 0;
+                updatePlayerPosition(player);
+                showActionModal(`${player.name} went to jail!`, [{text: "OK", action: endTurn}]);
+            }
+            
+            function handleJailTurn(player) {
+                if (player.isAI) {
+                    setTimeout(() => {
+                        if (player.getOutOfJailCards > 0) {
+                            player.getOutOfJailCards--; 
+                            player.inJail=0; 
+                            showLogMessage(`${player.name} used a Get Out of Jail Free card.`); 
+                            prepareForRoll();
+                        } else if (player.money >= 150) { // AI pays if it has a decent cash reserve
+                            player.money-=50; 
+                            player.inJail=0; 
+                            showLogMessage(`${player.name} paid $50 to get out of jail.`); 
+                            prepareForRoll();
+                        } else {
+                            const d1 = Math.floor(Math.random() * 6) + 1, d2 = Math.floor(Math.random() * 6) + 1;
+                            showLogMessage(`${player.name} tries to roll doubles... Got a ${d1} and ${d2}.`);
+                            if (d1 === d2) {
+                                showLogMessage("Success! They're free.");
+                                player.inJail = 0;
+                                movePlayer(player, d1 + d2).then(handleLanding);
+                            } else {
+                                showLogMessage("Failed. Their turn is over.");
+                                player.inJail--;
+                                endTurn();
+                            }
+                        }
+                    }, 1500);
+                    return;
+                }
+
+                const tryRollForDouble = async () => {
+                    closeModal();
+                    state.diceRolled = true;
+                    const d1 = Math.floor(Math.random() * 6) + 1, d2 = Math.floor(Math.random() * 6) + 1;
+                    showLogMessage(`${player.name} tries to roll doubles... Got a ${d1} and ${d2}.`);
+                    await new Promise(res => setTimeout(res, 500));
+                    if (d1 === d2) {
+                        showLogMessage("Success! You're free.");
+                        player.inJail = 0;
+                        await movePlayer(player, d1 + d2);
+                        await handleLanding();
+                    } else {
+                        showLogMessage("Failed. Your turn is over.");
+                        player.inJail--;
+                        if (player.inJail === 0) {
+                            showLogMessage("You must pay the $50 fine next turn.");
+                        }
+                        endTurn();
+                    }
+                };
+
+                const actions = [{text: "Try to Roll Doubles", action: tryRollForDouble }];
+                if (player.money >= 50) actions.push({text: "Pay $50 Fine", action: ()=>{player.money-=50; player.inJail=0; showLogMessage(`${player.name} paid $50 to get out of jail.`); closeModal(); prepareForRoll();}});
+                if (player.getOutOfJailCards > 0) actions.push({text: "Use Card", action: ()=>{player.getOutOfJailCards--; player.inJail=0; showLogMessage(`${player.name} used a Get Out of Jail Free card.`); closeModal(); prepareForRoll();}});
+                
+                showActionModal(`${player.name}, you are in jail. You have ${player.inJail} turn(s) left to try rolling doubles.`, actions);
+            }
+            
+            // Property Management
+            function showManagePropertiesModal() {
+                const player = getCurrentPlayer();
+                let content = `<h2>Manage Properties for ${player.name}</h2>`;
+                const grouped = {};
+                player.properties.forEach(pId => {
+                    const prop = state.properties[pId];
+                    if (prop.color) {
+                        if (!grouped[prop.color]) grouped[prop.color] = [];
+                        grouped[prop.color].push(prop);
+                    }
+                });
+
+                Object.keys(grouped).forEach(color => {
+                    const propsInGroup = grouped[color];
+                    const monopolySize = state.properties.filter(p => p.color === color).length;
+                    const hasMonopoly = propsInGroup.length === monopolySize;
+                    
+                    content += `<div style="border: 2px solid ${color}; padding: 10px; margin-bottom: 10px; border-radius: 5px;">`;
+                    let groupName = propsInGroup[0].name.replace(/ Ave| Place| Gardens| Avenue/g, '');
+                    content += `<h4>${groupName} Group ${hasMonopoly ? '<b>(Monopoly!)</b>' : ''}</h4>`;
+
+                    propsInGroup.forEach(prop => {
+                        content += `<p style="display:flex; justify-content: space-between; align-items: center;">
+                            <span>${prop.name} (Houses: ${prop.houses === 5 ? 'Hotel' : prop.houses})</span>
+                            <span>
+                                <button onclick="mortgageProperty(${prop.id})" ${prop.houses > 0 ? 'disabled title="Sell houses first!"' : ''}>${prop.mortgaged ? 'Unmortgage' : 'Mortgage'}</button>
+                                ${hasMonopoly && !prop.mortgaged && prop.houses < 5 ? `<button onclick="buildHouse(${prop.id})">Build</button>` : ''}
+                            </span>
+                        </p>`;
+                    });
+                    content += `</div>`;
+                });
+                 content += `<div class='modal-actions'><button id="manage-done-btn">Done</button></div>`;
+                 showActionModal(content, []);
+                 document.getElementById('manage-done-btn').addEventListener('click', () => closeModal());
+            }
+            
+            function buildHouse(propId) {
+                const prop = state.properties[propId];
+                const player = getCurrentPlayer();
+                if(player.money >= prop.houseCost && prop.houses < 5) {
+                    player.money -= prop.houseCost;
+                    prop.houses++;
+                    showLogMessage(`Built a ${prop.houses === 5 ? 'hotel' : 'house'} on ${prop.name}.`);
+                    showManagePropertiesModal();
+                    updateAllUI();
+                }
+            }
+            
+            function mortgageProperty(propId) {
+                const prop = state.properties[propId];
+                const player = getCurrentPlayer();
+                if (prop.mortgaged) { // Unmortgage
+                    const cost = Math.round(prop.price / 2 * 1.1); // 10% interest
+                    if(player.money >= cost) {
+                        player.money -= cost;
+                        prop.mortgaged = false;
+                        showLogMessage(`Unmortgaged ${prop.name} for $${cost}.`);
+                    }
+                } else { // Mortgage
+                    player.money += prop.price / 2;
+                    prop.mortgaged = true;
+                    showLogMessage(`Mortgaged ${prop.name} for $${prop.price / 2}.`);
+                }
+                showManagePropertiesModal();
+                updateAllUI();
+            }
+            
+            function calculateRent(property, diceRoll) {
+                if (property.mortgaged) return 0;
+                if (property.type === 'utility') {
+                    const ownedUtilities = state.properties.filter(p => p.type === 'utility' && p.owner === property.owner).length;
+                    return (ownedUtilities === 1 ? 4 : 10) * diceRoll;
+                }
+                if (property.type === 'railroad') {
+                    const ownedRailroads = state.properties.filter(p => p.type === 'railroad' && p.owner === property.owner).length;
+                    return 25 * Math.pow(2, ownedRailroads - 1);
+                }
+                if (property.houses === 0) {
+                    const groupColor = property.color;
+                    const groupProperties = state.properties.filter(p => p.color === groupColor);
+                    const isMonopoly = groupProperties.every(p => p.owner === property.owner);
+                    return isMonopoly ? property.rent[0] * 2 : property.rent[0];
+                }
+                return property.rent[property.houses];
+            }
+
+            // Utility and Modal Functions
+            function showPropertyCard(propId) {
+                const property = state.properties[propId];
+                let content = ``;
+                if (property.type === 'property') {
+                    content = `
+                        <div class="property-card-modal">
+                            <div class="color-bar" style="background-color:${property.color};"></div>
+                            <h2>${property.name}</h2>
+                            <table class="rent-table">
+                                <tr><td>Rent</td><td>$${property.rent[0]}</td></tr>
+                                <tr><td colspan="2" style="font-size: 0.8em; padding-left: 10px;">(With monopoly, rent is doubled)</td></tr>
+                                <tr><td>With 1 House</td><td>$${property.rent[1]}</td></tr>
+                                <tr><td>With 2 Houses</td><td>$${property.rent[2]}</td></tr>
+                                <tr><td>With 3 Houses</td><td>$${property.rent[3]}</td></tr>
+                                <tr><td>With 4 Houses</td><td>$${property.rent[4]}</td></tr>
+                                <tr><td>With HOTEL</td><td>$${property.rent[5]}</td></tr>
+                            </table>
+                            <p style="margin-top: 10px; font-size: 0.9rem;">Mortgage Value: $${property.price / 2}</p>
+                            <p style="font-size: 0.9rem;">House Cost: $${property.houseCost} each</p>
+                        </div>
+                    `;
+                } else if (property.type === 'railroad' || property.type === 'utility') {
+                     content = `<h2>${property.name}</h2><p>Price: $${property.price}</p>`;
+                } else {
+                    content = `<h2>${property.name}</h2>`;
+                }
+                const owner = property.owner !== null ? state.players[property.owner] : null;
+                if (owner) content += `<p style="margin-top: 10px;">Owner: ${owner.name}</p>`;
+                if (property.mortgaged) content += `<p style="color: red; font-weight: bold;">MORTGAGED</p>`;
+                showActionModal(content, [{text: 'Close', action: () => closeModal() }]);
+            }
+            
+            function showActionModal(content, actions = []) {
+                dom.modalContent.innerHTML = `<div>${content}</div>`;
+                const actionsContainer = document.createElement('div');
+                actionsContainer.className = 'modal-actions';
+                if (actions.length > 0) {
+                    actions.forEach(({text, action}) => {
+                        const btn = document.createElement('button');
+                        btn.textContent = text;
+                        btn.addEventListener('click', action);
+                        btn.addEventListener('touchend', (e) => {
+                           e.preventDefault();
+                           action();
+                        });
+                        actionsContainer.appendChild(btn);
+                    });
+                    dom.modalContent.appendChild(actionsContainer);
+                }
+                dom.actionModal.style.display = 'flex';
+            }
+
+            function closeModal(modalId = 'action-modal') { 
+                const modal = document.getElementById(modalId);
+                if (modal) {
+                    modal.style.display = 'none';
+                }
+            }
+
+            function getCurrentPlayer() { return state.players[state.currentPlayerIndex]; }
+            function showLogMessage(message) { document.getElementById('dice-roll-display').textContent = message; }
+
+            // --- Expose functions to global scope for dynamic on-click handlers ---
+            window.closeModal = closeModal;
+            window.buildHouse = buildHouse;
+            window.mortgageProperty = mortgageProperty;
+            
+            // --- Start the application ---
+            initSetup();
+            initGameControls();
+        });
+    </script>
+</body>
+</html>

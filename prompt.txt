@@ -1,0 +1,10 @@
+enhance the game styles and functions 
+add back button to redirect to index.html, add touch functionality for android mobile ui and also lock the scroll bar when the game starts , add intruction fot the game in the left side of the board and make the instructions visible only by touching the intructions button 
+and also make sure that the games work with flask app.py seamlessly and give fully updated code
+
+ this is my index.html , code with html,css,js as a single file and  i had attached the image of all other webpages of my webgame file names, using this give me app.py code to use flaskto connect with mongo db database to store user details and save the game scores and contact data
+ 
+
+ enhance the game styles and functions 
+add back button to redirect to index.html, add touch functionality for android mobile ui and also lock the scroll bar when the game starts , add intruction fot the game in the left side of the board and make the instructions visible only by touching the intructions button 
+and also make sure that the games work with flask app.py seamlessly and give fully updated code ,make the game screen is fit in the windows and mobile screen 

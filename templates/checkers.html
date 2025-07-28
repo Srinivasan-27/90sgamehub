@@ -1,0 +1,1071 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Checkers Game</title>
+    <style>
+    /* Game Hub Style for Checkers - ENHANCED */
+    body {
+        font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        background: linear-gradient(135deg, #1a1a2e, #16213e);
+        color: #e6e6e6;
+        margin: 0;
+        padding: 0;
+        min-height: 100vh;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        overflow-x: hidden;
+    }
+    
+    h1 {
+        color: #f8f8f8;
+        text-align: center;
+        margin: 20px 0;
+        font-size: 2.5rem;
+        text-shadow: 0 0 10px rgba(0, 255, 255, 0.5);
+        letter-spacing: 1px;
+    }
+    
+    .game-container {
+        width: 90%;
+        max-width: 1000px;
+        background: rgba(30, 30, 46, 0.8);
+        border-radius: 15px;
+        box-shadow: 0 10px 25px rgba(0, 0, 0, 0.5);
+        padding: 20px;
+        margin-bottom: 30px;
+        backdrop-filter: blur(5px);
+        border: 1px solid rgba(255, 255, 255, 0.1);
+        position: relative;
+    }
+    
+    .setup-screen {
+        background: rgba(40, 40, 60, 0.7);
+        padding: 25px;
+        border-radius: 10px;
+        margin-bottom: 20px;
+        text-align: center;
+        border: 1px solid rgba(255, 255, 255, 0.1);
+    }
+    
+    .setup-screen h2 {
+        margin-top: 0;
+        color: #4fc3f7;
+        font-size: 1.8rem;
+        margin-bottom: 20px;
+    }
+    
+    .option-group {
+        margin: 20px 0;
+    }
+    
+    label {
+        margin-right: 10px;
+        font-weight: bold;
+        color: #bbbbbb;
+        font-size: 1.1rem;
+    }
+    
+    select {
+        padding: 10px 15px;
+        border-radius: 5px;
+        border: none;
+        font-size: 1rem;
+        background-color: rgba(50, 50, 70, 0.8);
+        color: #ffffff;
+        border: 1px solid #4fc3f7;
+        cursor: pointer;
+    }
+    
+    button {
+        padding: 12px 25px;
+        border-radius: 5px;
+        border: none;
+        font-size: 1.1rem;
+        cursor: pointer;
+        transition: all 0.3s ease;
+        margin: 10px;
+        font-weight: bold;
+        letter-spacing: 0.5px;
+    }
+    
+    #startGame, #newGame, #backButton, #backButtonGame {
+        background: linear-gradient(135deg, #4fc3f7, #1976d2);
+        color: white;
+        box-shadow: 0 4px 6px rgba(0, 0, 0, 0.3);
+    }
+    
+    #startGame:hover, #newGame:hover, #backButton:hover, #backButtonGame:hover {
+        background: linear-gradient(135deg, #64b5f6, #1565c0);
+        transform: translateY(-2px);
+        box-shadow: 0 6px 8px rgba(0, 0, 0, 0.4);
+    }
+    
+    .game-board {
+        display: none;
+        flex-direction: column;
+        align-items: center;
+        position: relative;
+    }
+
+    /* NEW styles for top control buttons container */
+    .game-controls-top {
+        display: flex;
+        justify-content: center;
+        gap: 20px;
+        width: 100%;
+        margin-bottom: 20px;
+    }
+    
+    .timer-container {
+        display: flex;
+        justify-content: space-between;
+        width: 100%;
+        margin-bottom: 20px;
+        background: rgba(30, 30, 46, 0.7);
+        padding: 10px;
+        border-radius: 8px;
+        border: 1px solid rgba(255, 255, 255, 0.1);
+    }
+    
+    .timer {
+        color: white;
+        padding: 10px 20px;
+        border-radius: 5px;
+        font-size: 1.1rem;
+        font-family: 'Courier New', monospace;
+        font-weight: bold;
+        text-shadow: 0 0 5px rgba(255, 255, 255, 0.5);
+    }
+    
+    #redTimer {
+        background: rgba(211, 47, 47, 0.7);
+    }
+    
+    #blackTimer {
+        background: rgba(33, 33, 33, 0.7);
+    }
+    
+    .board-container {
+        display: flex;
+        flex-wrap: wrap;
+        justify-content: center;
+        gap: 20px;
+        width: 100%;
+    }
+    
+    .board {
+        display: grid;
+        grid-template-columns: repeat(8, 60px);
+        grid-template-rows: repeat(8, 60px);
+        border: 3px solid #4fc3f7;
+        border-radius: 5px;
+        overflow: hidden;
+        box-shadow: 0 5px 15px rgba(0, 0, 0, 0.5);
+        margin: 20px 0;
+    }
+    
+    .cell {
+        width: 60px;
+        height: 60px;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        cursor: pointer;
+        transition: all 0.2s ease;
+        -webkit-tap-highlight-color: transparent;
+        user-select: none;
+    }
+    
+    .dark {
+        background-color: #8d6e63;
+    }
+    
+    .light {
+        background-color: #efebe9;
+    }
+    
+    .piece {
+        width: 50px;
+        height: 50px;
+        border-radius: 50%;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        cursor: pointer;
+        position: relative;
+        transition: all 0.2s ease;
+        box-shadow: 0 3px 5px rgba(0, 0, 0, 0.3);
+        -webkit-tap-highlight-color: transparent;
+        user-select: none;
+    }
+    
+    .black {
+        background: linear-gradient(135deg, #424242, #212121);
+        border: 2px solid #212121;
+    }
+    
+    .red {
+        background: linear-gradient(135deg, #ef5350, #c62828);
+        border: 2px solid #b71c1c;
+    }
+    
+    .king::after {
+        content: "♔";
+        color: gold;
+        font-size: 24px;
+        position: absolute;
+        text-shadow: 0 0 5px rgba(0, 0, 0, 0.5);
+    }
+    
+    .selected {
+        box-shadow: 0 0 15px 5px rgba(255, 235, 59, 0.8);
+        transform: scale(1.05);
+    }
+    
+    .valid-move {
+        box-shadow: inset 0 0 15px 5px rgba(76, 175, 80, 0.7);
+    }
+    
+    .game-info {
+        margin-top: 20px;
+        font-size: 1.2rem;
+        font-weight: bold;
+        text-align: center;
+        background: rgba(30, 30, 46, 0.7);
+        padding: 15px;
+        border-radius: 8px;
+        border: 1px solid rgba(255, 255, 255, 0.1);
+        width: 100%;
+    }
+    
+    #currentTurn {
+        margin: 0 0 10px 0;
+        color: #4fc3f7;
+        font-size: 1.3rem;
+    }
+    
+    .move-history {
+        max-height: 150px;
+        overflow-y: auto;
+        border: 1px solid rgba(255, 255, 255, 0.1);
+        padding: 10px;
+        margin-top: 15px;
+        background: rgba(20, 20, 40, 0.6);
+        border-radius: 5px;
+        font-size: 0.95rem;
+    }
+    
+    .move-history div {
+        padding: 5px 0;
+        border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+    }
+    
+    .move-history div:last-child {
+        border-bottom: none;
+    }
+    
+    /* Win popup styles */
+    .win-popup {
+        position: absolute;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        background: rgba(40, 40, 60, 0.95);
+        padding: 30px;
+        border-radius: 10px;
+        text-align: center;
+        z-index: 100;
+        box-shadow: 0 0 20px rgba(0, 0, 0, 0.7);
+        border: 2px solid #4fc3f7;
+        max-width: 80%;
+        animation: fadeIn 0.5s ease-out;
+    }
+    
+    .win-popup h2 {
+        color: #4fc3f7;
+        margin-top: 0;
+        font-size: 2rem;
+    }
+    
+    .win-popup p {
+        font-size: 1.2rem;
+        margin-bottom: 20px;
+    }
+    
+    .win-popup button {
+        background: linear-gradient(135deg, #4fc3f7, #1976d2);
+        color: white;
+        border: none;
+        padding: 10px 20px;
+        font-size: 1rem;
+        border-radius: 5px;
+        cursor: pointer;
+        transition: all 0.3s ease;
+    }
+    
+    .win-popup button:hover {
+        background: linear-gradient(135deg, #64b5f6, #1565c0);
+    }
+    
+    @keyframes fadeIn {
+        from { opacity: 0; transform: translate(-50%, -60%); }
+        to { opacity: 1; transform: translate(-50%, -50%); }
+    }
+    
+    /* Scrollbar styling */
+    ::-webkit-scrollbar {
+        width: 8px;
+    }
+    
+    ::-webkit-scrollbar-track {
+        background: rgba(30, 30, 46, 0.5);
+    }
+    
+    ::-webkit-scrollbar-thumb {
+        background: #4fc3f7;
+        border-radius: 4px;
+    }
+    
+    ::-webkit-scrollbar-thumb:hover {
+        background: #64b5f6;
+    }
+    
+    /* Instructions Button - Repositioned to the right */
+    .instructions-button {
+        position: fixed;
+        top: 20px;
+        right: 20px; /* Changed from left to right */
+        background: linear-gradient(135deg, #4fc3f7, #1976d2);
+        color: white;
+        border: none;
+        padding: 10px 15px;
+        border-radius: 5px;
+        cursor: pointer;
+        z-index: 250; /* Ensure it's on top */
+        font-weight: bold;
+        box-shadow: 0 2px 5px rgba(0, 0, 0, 0.3);
+    }
+    
+    /* Instructions Panel - Changed to a popup */
+    .instructions-panel {
+        position: fixed;
+        top: 50%;
+        left: 50%;
+        width: 90%;
+        max-width: 500px;
+        max-height: 80vh;
+        transform: translate(-50%, -50%) scale(0.95);
+        background: rgba(30, 30, 46, 0.97);
+        padding: 30px;
+        overflow-y: auto;
+        transition: opacity 0.3s ease, transform 0.3s ease;
+        z-index: 200;
+        border: 2px solid #4fc3f7;
+        border-radius: 10px;
+        box-shadow: 0 0 25px rgba(0, 0, 0, 0.5);
+        opacity: 0;
+        pointer-events: none;
+    }
+    
+    .instructions-panel.show {
+        opacity: 1;
+        transform: translate(-50%, -50%) scale(1);
+        pointer-events: auto;
+    }
+    
+    .instructions-panel h2 {
+        color: #4fc3f7;
+        margin-top: 0;
+        text-align: center;
+    }
+    
+    .instructions-panel ul {
+        padding-left: 20px;
+    }
+    
+    .instructions-panel li {
+        margin-bottom: 10px;
+        line-height: 1.5;
+    }
+    
+    /* Overlay for the instructions popup */
+    .instructions-overlay {
+        position: fixed;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background: rgba(0, 0, 0, 0.6);
+        z-index: 199;
+        display: none;
+        opacity: 0;
+        transition: opacity 0.3s ease;
+    }
+    
+    .instructions-overlay.show {
+        display: block;
+        opacity: 1;
+    }
+    
+    /* Responsive adjustments */
+    @media (max-width: 768px) {
+        .board {
+            grid-template-columns: repeat(8, 45px);
+            grid-template-rows: repeat(8, 45px);
+        }
+        
+        .cell {
+            width: 45px;
+            height: 45px;
+        }
+        
+        .piece {
+            width: 40px;
+            height: 40px;
+        }
+        
+        .king::after {
+            font-size: 18px;
+        }
+        
+        h1 {
+            font-size: 2rem;
+        }
+        
+        .game-container {
+            width: 95%;
+            padding: 15px;
+        }
+        
+        .win-popup {
+            padding: 20px;
+            width: 90%;
+        }
+        
+        .win-popup h2 {
+            font-size: 1.5rem;
+        }
+
+        .instructions-button {
+            top: 15px;
+            right: 10px;
+            padding: 8px 15px;
+            font-size: 1rem;
+        }
+    }
+    
+    @media (max-width: 480px) {
+        .board {
+            grid-template-columns: repeat(8, 40px);
+            grid-template-rows: repeat(8, 40px);
+        }
+        
+        .cell {
+            width: 40px;
+            height: 40px;
+        }
+        
+        .piece {
+            width: 35px;
+            height: 35px;
+        }
+        
+        .king::after {
+            font-size: 16px;
+        }
+        
+        .instructions-panel {
+            width: 90%;
+        }
+
+        .timer-container {
+            flex-direction: column;
+            gap: 10px;
+            align-items: center;
+        }
+        
+        .game-controls-top {
+            flex-direction: column;
+            align-items: center;
+        }
+    }
+</style>
+</head>
+<body>
+    <button class="instructions-button" id="instructionsButton">? Instructions</button>
+    <div class="instructions-overlay" id="instructionsOverlay"></div>
+    <div class="instructions-panel" id="instructionsPanel">
+        <h2>Checkers Rules</h2>
+        <ul>
+            <li>Checkers is played by two players on an 8x8 board.</li>
+            <li>Red pieces move first.</li>
+            <li>Regular pieces can only move diagonally forward.</li>
+            <li>Kings (marked with ♔) can move diagonally in any direction.</li>
+            <li>To capture an opponent's piece, jump over it to an empty square.</li>
+            <li>Multiple captures in one turn are allowed and mandatory.</li>
+            <li>If a piece reaches the opposite side of the board, it becomes a king.</li>
+            <li>The game ends when one player has no pieces left or no valid moves.</li>
+        </ul>
+        <h2>How to Play</h2>
+        <ul>
+            <li>Tap on your piece to select it.</li>
+            <li>Tap on a highlighted square to move.</li>
+            <li>Captures are mandatory - you must take them if available.</li>
+            <li>If you have multiple captures, you must complete them in one turn.</li>
+        </ul>
+    </div>
+    
+    <h1>Checkers Game</h1>
+    
+    <div class="game-container">
+        <div class="setup-screen" id="setupScreen">
+            <h2>Game Setup</h2>
+            <div class="option-group">
+                <label for="opponent">Opponent:</label>
+                <select id="opponent">
+                    <option value="friend">Play with Friend</option>
+                    <option value="computer">Play with Computer</option>
+                </select>
+            </div>
+            <div class="option-group">
+                <label for="color">Your Color:</label>
+                <select id="color">
+                    <option value="red">Red (Moves First)</option>
+                    <option value="black">Black</option>
+                </select>
+            </div>
+            <button id="startGame">Start Game</button>
+            <button id="backButton">Back to Home</button>
+        </div>
+        
+        <div class="game-board" id="gameBoard">
+            <div class="game-controls-top">
+                <button id="newGame">New Game</button>
+                <button id="backButtonGame">Back to Home</button>
+            </div>
+
+            <div class="timer-container">
+                <div class="timer" id="redTimer">Red: 00:00</div>
+                <div class="timer" id="blackTimer">Black: 00:00</div>
+            </div>
+            
+            <div class="board-container">
+                <div class="board" id="board"></div>
+            </div>
+            
+            <div class="game-info">
+                <p id="currentTurn">Current turn: Red</p>
+                <div class="move-history" id="moveHistory"></div>
+            </div>
+            
+            </div>
+    </div>
+    
+    <script>
+        // Game state variables
+        let board = [];
+        let selectedPiece = null;
+        let validMoves = [];
+        let currentPlayer = 'red';
+        let gameOver = false;
+        let isAgainstComputer = false;
+        let playerColor = 'red';
+        let computerColor = 'black';
+        let isScrollLocked = false;
+
+        // Timer variables
+        let redTime = 0;
+        let blackTime = 0;
+        let timerInterval = null;
+        let lastTimestamp = 0;
+        let isRedTurn = true; // Track whose turn it is for timer purposes
+
+        // DOM elements
+        const setupScreen = document.getElementById('setupScreen');
+        const gameBoard = document.getElementById('gameBoard');
+        const boardElement = document.getElementById('board');
+        const redTimerElement = document.getElementById('redTimer');
+        const blackTimerElement = document.getElementById('blackTimer');
+        const currentTurnElement = document.getElementById('currentTurn');
+        const moveHistoryElement = document.getElementById('moveHistory');
+        const startGameButton = document.getElementById('startGame');
+        const newGameButton = document.getElementById('newGame');
+        const backButton = document.getElementById('backButton');
+        const backButtonGame = document.getElementById('backButtonGame');
+        const opponentSelect = document.getElementById('opponent');
+        const colorSelect = document.getElementById('color');
+        const instructionsButton = document.getElementById('instructionsButton');
+        const instructionsPanel = document.getElementById('instructionsPanel');
+        const instructionsOverlay = document.getElementById('instructionsOverlay');
+
+        // Initialize the game
+        function initGame() {
+            isAgainstComputer = opponentSelect.value === 'computer';
+            playerColor = colorSelect.value;
+            computerColor = playerColor === 'red' ? 'black' : 'red';
+            
+            // Reset game state
+            board = createBoard();
+            selectedPiece = null;
+            validMoves = [];
+            currentPlayer = 'red';
+            gameOver = false;
+            isRedTurn = true;
+            
+            // Reset timers
+            redTime = 0;
+            blackTime = 0;
+            updateTimers();
+            
+            // Clear move history
+            moveHistoryElement.innerHTML = '';
+            addToMoveHistory('Game started. Red moves first.');
+            
+            // Update UI
+            currentTurnElement.textContent = `Current turn: ${currentPlayer === 'red' ? 'Red' : 'Black'}`;
+            
+            // Show game board
+            setupScreen.style.display = 'none';
+            gameBoard.style.display = 'flex';
+            
+            // Start timer
+            clearInterval(timerInterval);
+            lastTimestamp = Date.now();
+            timerInterval = setInterval(updateTimers, 1000);
+            
+            // Lock scroll
+            lockScroll();
+            
+            // Render the board
+            renderBoard();
+            
+            // If playing against computer and computer goes first, make a move
+            if (isAgainstComputer && computerColor === 'red') {
+                setTimeout(computerMove, 1000);
+            }
+        }
+
+        // Create initial board state
+        function createBoard() {
+            const board = Array(8).fill().map(() => Array(8).fill(null));
+            
+            // Set up black pieces (top)
+            for (let row = 0; row < 3; row++) {
+                for (let col = (row % 2 === 0) ? 1 : 0; col < 8; col += 2) {
+                    board[row][col] = { color: 'black', isKing: false };
+                }
+            }
+            
+            // Set up red pieces (bottom)
+            for (let row = 5; row < 8; row++) {
+                for (let col = (row % 2 === 0) ? 1 : 0; col < 8; col += 2) {
+                    board[row][col] = { color: 'red', isKing: false };
+                }
+            }
+            
+            return board;
+        }
+
+        // Render the board
+        function renderBoard() {
+            boardElement.innerHTML = '';
+            
+            // Determine if any capture moves are available for the current player
+            const allPlayerMoves = getAllPlayerMoves(currentPlayer);
+            const mandatoryCaptures = allPlayerMoves.filter(move => move.captured);
+
+            for (let row = 0; row < 8; row++) {
+                for (let col = 0; col < 8; col++) {
+                    const cell = document.createElement('div');
+                    cell.className = `cell ${(row + col) % 2 === 0 ? 'light' : 'dark'}`;
+                    cell.dataset.row = row;
+                    cell.dataset.col = col;
+                    
+                    // Highlight valid moves
+                    const isMoveValid = validMoves.some(move => 
+                        move.to.row === row && move.to.col === col
+                    );
+                    if (isMoveValid) {
+                        cell.classList.add('valid-move');
+                    }
+                    
+                    // Add piece if exists
+                    const piece = board[row][col];
+                    if (piece) {
+                        const pieceElement = document.createElement('div');
+                        pieceElement.className = `piece ${piece.color} ${piece.isKing ? 'king' : ''}`;
+                        
+                        // Highlight selected piece
+                        if (selectedPiece && selectedPiece.row === row && selectedPiece.col === col) {
+                            pieceElement.classList.add('selected');
+                        }
+                        
+                        // Add both click and touch events
+                        pieceElement.addEventListener('click', () => handlePieceClick(row, col, mandatoryCaptures));
+                        pieceElement.addEventListener('touchstart', (e) => {
+                            e.preventDefault();
+                            handlePieceClick(row, col, mandatoryCaptures);
+                        }, { passive: false });
+                        
+                        cell.appendChild(pieceElement);
+                    }
+                    
+                    // Add both click and touch events for cells
+                    cell.addEventListener('click', () => handleCellClick(row, col));
+                    cell.addEventListener('touchstart', (e) => {
+                        e.preventDefault();
+                        handleCellClick(row, col);
+                    }, { passive: false });
+                    
+                    boardElement.appendChild(cell);
+                }
+            }
+        }
+
+        // Handle piece click
+        function handlePieceClick(row, col, mandatoryCaptures) {
+            if (gameOver) return;
+            
+            const piece = board[row][col];
+            
+            // Check if it's the current player's piece
+            if (!piece || piece.color !== currentPlayer) return;
+            
+            // If captures are mandatory, only allow selecting pieces that can capture
+            if (mandatoryCaptures.length > 0) {
+                const canThisPieceCapture = mandatoryCaptures.some(move => move.from.row === row && move.from.col === col);
+                if (!canThisPieceCapture) {
+                    // Optionally show feedback that a capture is required
+                    console.log("A capture is mandatory elsewhere.");
+                    return;
+                }
+            }
+            
+            // If it's a computer's turn, do nothing
+            if (isAgainstComputer && currentPlayer === computerColor) return;
+            
+            // If the same piece is clicked again, deselect it
+            if (selectedPiece && selectedPiece.row === row && selectedPiece.col === col) {
+                selectedPiece = null;
+                validMoves = [];
+                renderBoard();
+                return;
+            }
+            
+            // Select the piece and show valid moves
+            selectedPiece = { row, col };
+            validMoves = getValidMoves(row, col, mandatoryCaptures.length > 0);
+            renderBoard();
+        }
+
+        // Handle cell click
+        function handleCellClick(row, col) {
+            if (!selectedPiece || gameOver) return;
+            
+            // Check if the move is valid
+            const move = validMoves.find(m => m.to.row === row && m.to.col === col);
+            if (!move) return;
+            
+            // Make the move and check if turn is over
+            const turnIsOver = makeMove(selectedPiece.row, selectedPiece.col, row, col, move.captured);
+
+            if (turnIsOver) {
+                switchTurn();
+            } else {
+                // This handles multi-capture scenarios where the turn is not over yet
+                renderBoard();
+            }
+        }
+
+        // Get all possible moves for a player
+        function getAllPlayerMoves(player) {
+            const allMoves = [];
+            for (let r = 0; r < 8; r++) {
+                for (let c = 0; c < 8; c++) {
+                    const p = board[r][c];
+                    if (p && p.color === player) {
+                        const moves = getValidMoves(r, c, false); // Check all moves initially
+                        allMoves.push(...moves);
+                    }
+                }
+            }
+            return allMoves;
+        }
+
+        // Get all valid moves for a piece
+        function getValidMoves(row, col, mustCapture) {
+            const piece = board[row][col];
+            if (!piece) return [];
+            
+            const captureMoves = [];
+            const regularMoves = [];
+            const directions = piece.isKing ? 
+                [{ row: -1, col: -1 }, { row: -1, col: 1 }, { row: 1, col: -1 }, { row: 1, col: 1 }] :
+                piece.color === 'red' ? 
+                    [{ row: -1, col: -1 }, { row: -1, col: 1 }] : // Red moves "up" the board (decreasing row index)
+                    [{ row: 1, col: -1 }, { row: 1, col: 1 }];   // Black moves "down"
+            
+            for (const dir of directions) {
+                const newRow = row + dir.row;
+                const newCol = col + dir.col;
+                
+                if (newRow >= 0 && newRow < 8 && newCol >= 0 && newCol < 8) {
+                    const target = board[newRow][newCol];
+                    
+                    // Regular move
+                    if (!target && !mustCapture) {
+                        regularMoves.push({
+                            from: { row, col },
+                            to: { row: newRow, col: newCol },
+                            captured: null
+                        });
+                    }
+                    // Capture move
+                    else if (target && target.color !== piece.color) {
+                        const jumpRow = newRow + dir.row;
+                        const jumpCol = newCol + dir.col;
+                        
+                        if (jumpRow >= 0 && jumpRow < 8 && jumpCol >= 0 && jumpCol < 8 && !board[jumpRow][jumpCol]) {
+                            captureMoves.push({
+                                from: { row, col },
+                                to: { row: jumpRow, col: jumpCol },
+                                captured: { row: newRow, col: newCol }
+                            });
+                        }
+                    }
+                }
+            }
+            
+            // If there are captures, only return captures
+            return captureMoves.length > 0 ? captureMoves : regularMoves;
+        }
+
+        // Make a move on the board
+        function makeMove(fromRow, fromCol, toRow, toCol, captured) {
+            const piece = board[fromRow][fromCol];
+            board[fromRow][fromCol] = null;
+            board[toRow][toCol] = piece;
+            
+            // Check for promotion to king
+            if ((piece.color === 'red' && toRow === 0) || (piece.color === 'black' && toRow === 7)) {
+                if (!piece.isKing) {
+                    piece.isKing = true;
+                    addToMoveHistory(`${piece.color.charAt(0).toUpperCase() + piece.color.slice(1)} piece promoted to King!`);
+                }
+            }
+            
+            // Handle captured piece
+            if (captured) {
+                board[captured.row][captured.col] = null;
+                addToMoveHistory(`${piece.color.charAt(0).toUpperCase() + piece.color.slice(1)} captured a piece.`);
+            } else {
+                addToMoveHistory(`${piece.color.charAt(0).toUpperCase() + piece.color.slice(1)} moved.`);
+            }
+            
+            // Check for multi-capture
+            if (captured) {
+                const newValidMoves = getValidMoves(toRow, toCol, true);
+                const hasMoreCaptures = newValidMoves.some(move => move.captured);
+                
+                if (hasMoreCaptures) {
+                    selectedPiece = { row: toRow, col: toCol };
+                    validMoves = newValidMoves;
+                    return false; // Turn isn't over yet
+                }
+            }
+            
+            return true; // Turn is over
+        }
+
+        function switchTurn() {
+            selectedPiece = null;
+            validMoves = [];
+            
+            if (!isGameOver()) {
+                currentPlayer = currentPlayer === 'red' ? 'black' : 'red';
+                isRedTurn = !isRedTurn;
+                currentTurnElement.textContent = `Current turn: ${currentPlayer.charAt(0).toUpperCase() + currentPlayer.slice(1)}`;
+                renderBoard();
+
+                if (isAgainstComputer && currentPlayer === computerColor) {
+                    setTimeout(computerMove, 1000);
+                }
+            } else {
+                renderBoard();
+            }
+        }
+        
+        // Computer move logic
+        function computerMove() {
+            if (gameOver || currentPlayer !== computerColor) return;
+            
+            const allMoves = getAllPlayerMoves(computerColor);
+            const captures = allMoves.filter(move => move.captured);
+            const movesToConsider = captures.length > 0 ? captures : allMoves;
+            
+            if (movesToConsider.length > 0) {
+                const randomMove = movesToConsider[Math.floor(Math.random() * movesToConsider.length)];
+                
+                const turnEnded = makeMove(
+                    randomMove.from.row, 
+                    randomMove.from.col, 
+                    randomMove.to.row, 
+                    randomMove.to.col, 
+                    randomMove.captured
+                );
+
+                if (turnEnded) {
+                    switchTurn();
+                } else {
+                    renderBoard(); // Update board for multi-capture
+                    setTimeout(computerMove, 1000); // Computer continues its turn
+                }
+            }
+        }
+
+        // Check if game is over
+        function isGameOver() {
+            const redMoves = getAllPlayerMoves('red');
+            const blackMoves = getAllPlayerMoves('black');
+            const redPieces = board.flat().filter(p => p && p.color === 'red').length;
+            const blackPieces = board.flat().filter(p => p && p.color === 'black').length;
+
+            let winner = null;
+            if (blackPieces === 0 || (currentPlayer === 'black' && blackMoves.length === 0)) {
+                winner = 'Red';
+            } else if (redPieces === 0 || (currentPlayer === 'red' && redMoves.length === 0)) {
+                winner = 'Black';
+            }
+
+            if (winner) {
+                gameOver = true;
+                clearInterval(timerInterval);
+                unlockScroll();
+                showWinPopup(`${winner} wins!`);
+                addToMoveHistory(`${winner} wins!`);
+                currentTurnElement.textContent = `Game over - ${winner} wins!`;
+                return true;
+            }
+            
+            return false;
+        }
+
+        // Show win popup
+        function showWinPopup(message) {
+            const existingPopup = document.querySelector('.win-popup');
+            if (existingPopup) existingPopup.remove();
+            
+            const popup = document.createElement('div');
+            popup.className = 'win-popup';
+            popup.innerHTML = `
+                <h2>Game Over!</h2>
+                <p>${message}</p>
+                <button id="playAgain">Play Again</button>
+            `;
+            
+            gameBoard.appendChild(popup);
+            
+            document.getElementById('playAgain').addEventListener('click', () => {
+                popup.remove();
+                // Go back to setup screen
+                clearInterval(timerInterval);
+                setupScreen.style.display = 'block';
+                gameBoard.style.display = 'none';
+                unlockScroll();
+            });
+        }
+
+        // Update timers
+        function updateTimers() {
+            if (gameOver) return;
+            const now = Date.now();
+            const elapsed = (now - lastTimestamp) / 1000;
+            lastTimestamp = now;
+            
+            if (isRedTurn) {
+                redTime += elapsed;
+            } else {
+                blackTime += elapsed;
+            }
+            
+            redTimerElement.textContent = `Red: ${formatTime(redTime)}`;
+            blackTimerElement.textContent = `Black: ${formatTime(blackTime)}`;
+        }
+
+        // Format time as MM:SS
+        function formatTime(seconds) {
+            const mins = Math.floor(seconds / 60);
+            const secs = Math.floor(seconds % 60);
+            return `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
+        }
+
+        // Add message to move history
+        function addToMoveHistory(message) {
+            const entry = document.createElement('div');
+            entry.textContent = message;
+            moveHistoryElement.appendChild(entry);
+            moveHistoryElement.scrollTop = moveHistoryElement.scrollHeight;
+        }
+
+        // Lock/Unlock scroll
+        function lockScroll() {
+            if (!isScrollLocked) {
+                document.body.style.overflow = 'hidden';
+                isScrollLocked = true;
+            }
+        }
+
+        function unlockScroll() {
+            if (isScrollLocked) {
+                document.body.style.overflow = '';
+                isScrollLocked = false;
+            }
+        }
+
+        // Event listeners
+        startGameButton.addEventListener('click', initGame);
+
+        newGameButton.addEventListener('click', () => {
+            clearInterval(timerInterval);
+            setupScreen.style.display = 'block';
+            gameBoard.style.display = 'none';
+            unlockScroll();
+            
+            const existingPopup = document.querySelector('.win-popup');
+            if (existingPopup) {
+                existingPopup.remove();
+            }
+        });
+
+        backButton.addEventListener('click', () => {
+            // Assuming index.html is the home page
+            window.location.href = 'index.html';
+        });
+
+        backButtonGame.addEventListener('click', () => {
+            clearInterval(timerInterval);
+            unlockScroll();
+            // Assuming index.html is the home page
+            window.location.href = 'index.html'; 
+        });
+
+        // Instructions panel toggle
+        instructionsButton.addEventListener('click', () => {
+            instructionsPanel.classList.toggle('show');
+            instructionsOverlay.classList.toggle('show');
+        });
+
+        instructionsOverlay.addEventListener('click', () => {
+            instructionsPanel.classList.remove('show');
+            instructionsOverlay.classList.remove('show');
+        });
+
+        // Initial setup
+        setupScreen.style.display = 'block';
+        gameBoard.style.display = 'none';
+    </script>
+</body>
+</html>

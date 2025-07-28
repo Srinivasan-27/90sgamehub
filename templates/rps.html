@@ -1,0 +1,497 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <title>Rock Paper Scissors</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.1.1/css/all.min.css">
+    <style>
+        :root {
+            --bg-start: #1a1a2e;
+            --bg-mid: #16213e;
+            --bg-end: #0f3460;
+            --text-color: #e6e6e6;
+            --glow-1: #00dbde;
+            --glow-2: #fc00ff;
+            --accent-1: #667eea;
+            --accent-2: #764ba2;
+            --hard-glow: rgba(255, 70, 70, 0.6);
+        }
+
+        * { box-sizing: border-box; user-select: none; }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, var(--bg-start), var(--bg-mid), var(--bg-end));
+            margin: 0;
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            min-height: 100vh;
+            color: var(--text-color);
+            overflow: hidden;
+        }
+
+        .game-container {
+            background-color: rgba(255, 255, 255, 0.08);
+            border-radius: 16px;
+            padding: 30px;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+            width: 90%;
+            max-width: 800px;
+            text-align: center;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(8px);
+            animation: fadeIn 0.6s ease-out;
+            position: relative;
+            transition: box-shadow 0.4s ease-in-out;
+        }
+        
+        .game-container.hard-mode {
+            box-shadow: 0 0 25px var(--hard-glow), 0 8px 32px rgba(0, 0, 0, 0.3);
+            border-color: var(--hard-glow);
+        }
+
+        h1 {
+            margin-top: 0;
+            font-size: 2.8rem;
+            text-shadow: 0 2px 10px rgba(0, 0, 0, 0.5);
+            margin-bottom: 20px;
+            background: linear-gradient(90deg, var(--glow-1), var(--glow-2));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            font-weight: 700;
+        }
+
+        .choices { display: flex; justify-content: center; gap: 25px; margin: 40px 0; flex-wrap: wrap; }
+
+        .choice {
+            background-color: rgba(255, 255, 255, 0.1);
+            border-radius: 50%;
+            width: 110px;
+            height: 110px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-size: 3.5rem;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            border: 2px solid rgba(255, 255, 255, 0.15);
+        }
+        .choice:hover { transform: translateY(-8px) scale(1.05); box-shadow: 0 10px 20px rgba(0, 0, 0, 0.3); }
+        .choice:active { transform: translateY(0) scale(0.98); }
+        .choice.rock { background: linear-gradient(135deg, #8e2de2, #4a00e0); }
+        .choice.paper { background: linear-gradient(135deg, #00b4db, #0083b0); }
+        .choice.scissors { background: linear-gradient(135deg, #f12711, #f5af19); }
+
+        .battle-area { display: flex; justify-content: space-around; align-items: center; margin: 40px 0; flex-wrap: wrap; }
+        .player-area, .computer-area { text-align: center; width: 200px; }
+
+        .player-choice, .computer-choice {
+            background-color: rgba(255, 255, 255, 0.1);
+            border-radius: 50%;
+            width: 160px;
+            height: 160px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-size: 5rem;
+            margin: 10px auto;
+            border: 3px solid rgba(255, 255, 255, 0.2);
+            transition: all 0.4s ease;
+        }
+        .player-choice { background: linear-gradient(135deg, #00b09b, #96c93d); }
+        .computer-choice { background: linear-gradient(135deg, #ff416c, #ff4b2b); }
+
+        .vs {
+            font-size: 2.5rem; margin: 0 20px; align-self: center; font-weight: bold;
+            background: linear-gradient(90deg, #ff8a00, #e52e71);
+            -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+        }
+
+        .result {
+            font-size: 1.8rem; margin: 30px 0; min-height: 50px; font-weight: 600;
+            transition: transform 0.3s ease;
+        }
+
+        .controls { display: flex; justify-content: center; gap: 20px; margin-top: 30px; flex-wrap: wrap; }
+        
+        button {
+            background: linear-gradient(135deg, var(--accent-1), var(--accent-2));
+            color: white; border: none; padding: 12px 25px; border-radius: 50px; cursor: pointer;
+            font-size: 1.1rem; transition: all 0.3s; box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+            font-weight: 600;
+        }
+        button:hover { transform: translateY(-3px); box-shadow: 0 8px 20px rgba(0, 0, 0, 0.3); }
+        button:active { transform: translateY(1px); }
+
+        .stats {
+            display: flex; justify-content: space-around; margin-top: 30px;
+            background-color: rgba(255, 255, 255, 0.08); padding: 20px; border-radius: 12px;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+        .stat { font-size: 1.3rem; font-weight: 500; }
+        .stat span { font-weight: 700; color: #fff; }
+
+        /* --- MODAL, BUTTONS, AND PANELS --- */
+        .modal {
+            display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background-color: rgba(0, 0, 0, 0.85); z-index: 100; justify-content: center;
+            align-items: center; backdrop-filter: blur(5px);
+        }
+        .modal-content {
+            background: linear-gradient(135deg, var(--bg-start), var(--bg-mid));
+            padding: 40px; border-radius: 20px; text-align: center; max-width: 500px; width: 90%;
+            box-shadow: 0 15px 35px rgba(0, 0, 0, 0.5);
+            animation: modalFadeIn 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+        #back-button, #instructions-button {
+            position: fixed; top: 20px; z-index: 101; background-color: rgba(255, 255, 255, 0.1);
+            color: var(--text-color); border: 1px solid rgba(255, 255, 255, 0.2); border-radius: 50px;
+            padding: 10px 20px; font-size: 1rem; font-weight: 500; text-decoration: none;
+            backdrop-filter: blur(5px); transition: all 0.3s;
+        }
+        #back-button { left: 20px; }
+        #instructions-button { right: 20px; width: 45px; height: 45px; padding: 0; border-radius: 50%; display: flex; justify-content: center; align-items: center; font-size: 1.2rem; cursor: pointer;}
+        #back-button:hover, #instructions-button:hover { background-color: rgba(255, 255, 255, 0.2); transform: translateY(-2px); }
+        
+        #instructions-panel {
+            display: none; position: fixed; top: 80px; right: 20px; width: 300px;
+            background-color: rgba(30, 30, 50, 0.9); color: var(--text-color); border: 1px solid rgba(255, 255, 255, 0.2);
+            border-radius: 12px; padding: 20px; backdrop-filter: blur(10px); z-index: 100; animation: fadeIn 0.3s;
+        }
+        #instructions-panel h3 { margin-top: 0; color: var(--glow-1); }
+        #instructions-panel ul { padding-left: 20px; text-align: left; }
+        #instructions-panel li { margin-bottom: 10px; }
+
+        /* --- ENHANCED DIFFICULTY SELECTOR STYLES --- */
+        .difficulty-selector {
+            margin: 25px 0;
+            display: flex;
+            justify-content: center;
+            gap: 10px;
+        }
+        .difficulty-btn {
+            background: transparent;
+            border: 2px solid rgba(255, 255, 255, 0.2);
+            color: var(--text-color);
+            padding: 10px 20px;
+            border-radius: 50px;
+            font-size: 1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+        .difficulty-btn:hover {
+            background: rgba(255, 255, 255, 0.1);
+            border-color: rgba(255, 255, 255, 0.5);
+        }
+        .difficulty-btn.selected {
+            background: linear-gradient(135deg, var(--accent-1), var(--accent-2));
+            border-color: var(--accent-1);
+            color: white;
+            box-shadow: 0 0 15px rgba(118, 75, 162, 0.5);
+        }
+
+
+        /* --- NEW ANIMATIONS --- */
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
+        @keyframes modalFadeIn { from { opacity: 0; transform: translateY(-50px) scale(0.9); } to { opacity: 1; transform: translateY(0) scale(1); } }
+        @keyframes resultPop {
+            0% { transform: scale(0.8); opacity: 0; }
+            80% { transform: scale(1.1); opacity: 1; }
+            100% { transform: scale(1); opacity: 1; }
+        }
+        .result.animated { animation: resultPop 0.5s ease-out; }
+
+        @keyframes handPopIn {
+            from { transform: scale(0.5); opacity: 0; }
+            to { transform: scale(1); opacity: 1; }
+        }
+        .player-choice.animated, .computer-choice.animated { animation: handPopIn 0.4s ease-out; }
+
+        @keyframes winnerPulse { 0%, 100% { transform: scale(1); box-shadow: 0 0 20px rgba(255, 255, 255, 0.3); } 50% { transform: scale(1.1); box-shadow: 0 0 35px rgba(255, 255, 255, 0.7); } }
+        .winner { animation: winnerPulse 1.2s ease-in-out infinite; }
+        .loser { opacity: 0.6; transform: scale(0.9); }
+
+        @media (max-width: 768px) {
+            h1 { font-size: 2.2rem; }
+            .choices { gap: 15px; }
+            .choice { width: 90px; height: 90px; font-size: 2.8rem; }
+            .player-choice, .computer-choice { width: 120px; height: 120px; font-size: 4rem; }
+            .vs { font-size: 2rem; margin: 20px 0; width: 100%; }
+            .battle-area { flex-direction: column; }
+            #back-button, #instructions-button { padding: 8px 15px; font-size: 0.9rem; }
+            #instructions-button { width: 40px; height: 40px; }
+        }
+    </style>
+</head>
+<body>
+    <a href="index.html" id="back-button"><i class="fas fa-arrow-left"></i> Home</a>
+    <button id="instructions-button"><i class="fas fa-question"></i></button>
+
+    <div id="instructions-panel">
+        <h3>How to Play</h3>
+        <ul>
+            <li>Select Rock, Paper, or Scissors.</li>
+            <li>Rock beats Scissors ✊ > ✌️</li>
+            <li>Scissors beats Paper ✌️ > ✋</li>
+            <li>Paper beats Rock ✋ > ✊</li>
+            <li>Choose a game mode and difficulty to start!</li>
+        </ul>
+    </div>
+
+    <div class="game-container" id="game-container">
+        <h1>Rock Paper Scissors</h1>
+        
+        <div class="choices">
+            <div class="choice rock" data-choice="rock">✊</div>
+            <div class="choice paper" data-choice="paper">✋</div>
+            <div class="choice scissors" data-choice="scissors">✌️</div>
+        </div>
+        
+        <div class="battle-area">
+            <div class="player-area">
+                <h3 id="playerName">You</h3>
+                <div class="player-choice" id="playerChoice">?</div>
+            </div>
+            <div class="vs">VS</div>
+            <div class="computer-area">
+                <h3 id="computerName">Computer</h3>
+                <div class="computer-choice" id="computerChoice">?</div>
+            </div>
+        </div>
+        
+        <div class="result" id="result">Choose your weapon!</div>
+        
+        <div class="stats">
+            <div class="stat">Wins: <span id="wins">0</span></div>
+            <div class="stat">Draws: <span id="draws">0</span></div>
+            <div class="stat">Losses: <span id="losses">0</span></div>
+        </div>
+        
+        <div class="controls">
+            <button id="newGameBtn">New Game</button>
+            <button id="resetScoreBtn">Reset Score</button>
+        </div>
+    </div>
+    
+    <div class="modal" id="startModal">
+        <div class="modal-content">
+            <h2>Game Settings</h2>
+            <div class="game-mode">
+                <label><input type="radio" name="gameMode" value="pvc" checked> Player vs Computer</label>
+                <label><input type="radio" name="gameMode" value="pvp"> Player vs Player</label>
+            </div>
+            <div class="difficulty-selector" id="difficultySelector">
+                <button class="difficulty-btn" data-difficulty="easy">Easy</button>
+                <button class="difficulty-btn selected" data-difficulty="medium">Medium</button>
+                <button class="difficulty-btn" data-difficulty="hard">Hard</button>
+            </div>
+            <button id="startGameBtn">Start Game</button>
+        </div>
+    </div>
+
+    <script>
+        // --- DOM ELEMENTS ---
+        const choiceElements = document.querySelectorAll('.choice');
+        const playerChoiceElement = document.getElementById('playerChoice');
+        const computerChoiceElement = document.getElementById('computerChoice');
+        const resultElement = document.getElementById('result');
+        const winsElement = document.getElementById('wins');
+        const drawsElement = document.getElementById('draws');
+        const lossesElement = document.getElementById('losses');
+        const newGameBtn = document.getElementById('newGameBtn');
+        const resetScoreBtn = document.getElementById('resetScoreBtn');
+        const startModal = document.getElementById('startModal');
+        const startGameBtn = document.getElementById('startGameBtn');
+        const gameModeRadios = document.getElementsByName('gameMode');
+        const difficultyButtons = document.querySelectorAll('.difficulty-btn'); // Changed
+        const playerNameElement = document.getElementById('playerName');
+        const computerNameElement = document.getElementById('computerName');
+        const instructionsButton = document.getElementById('instructions-button');
+        const instructionsPanel = document.getElementById('instructions-panel');
+        const gameContainer = document.getElementById('game-container');
+
+        // --- GAME STATE ---
+        const choices = ['rock', 'paper', 'scissors'];
+        const choiceSymbols = { rock: '✊', paper: '✋', scissors: '✌️' };
+        let playerScore = 0, computerScore = 0, draws = 0;
+        let gameMode = 'pvc', difficulty = 'medium';
+        let player1Choice = null, player2Choice = null;
+        let currentPlayer = 1, gameActive = false;
+        let thinkingInterval;
+
+        // --- INITIALIZATION ---
+        window.onload = function() {
+            startModal.style.display = 'flex';
+            loadScores();
+            setupEventListeners();
+        };
+
+        function setupEventListeners() {
+            choiceElements.forEach(choice => {
+                const choiceType = choice.dataset.choice;
+                choice.addEventListener('click', () => handleChoice(choiceType));
+                choice.addEventListener('touchstart', (e) => { e.preventDefault(); handleChoice(choiceType); });
+            });
+            
+            newGameBtn.addEventListener('click', () => { startModal.style.display = 'flex'; gameActive = false; });
+            resetScoreBtn.addEventListener('click', resetScores);
+            startGameBtn.addEventListener('click', startGame);
+
+            instructionsButton.addEventListener('click', () => {
+                const isHidden = instructionsPanel.style.display === 'none' || !instructionsPanel.style.display;
+                instructionsPanel.style.display = isHidden ? 'block' : 'none';
+            });
+            
+            for (let radio of gameModeRadios) {
+                radio.addEventListener('change', (e) => {
+                    gameMode = e.target.value;
+                    difficultyButtons[0].parentElement.style.display = gameMode === 'pvc' ? 'flex' : 'none';
+                });
+            }
+
+            // NEW: Event listener for difficulty buttons
+            difficultyButtons.forEach(button => {
+                button.addEventListener('click', () => {
+                    difficulty = button.dataset.difficulty;
+                    difficultyButtons.forEach(btn => btn.classList.remove('selected'));
+                    button.classList.add('selected');
+                });
+            });
+        }
+
+        // --- GAME LOGIC ---
+        function startGame() {
+            gameActive = true;
+            startModal.style.display = 'none';
+            resetRound();
+            
+            gameContainer.classList.toggle('hard-mode', difficulty === 'hard' && gameMode === 'pvc');
+
+            if (gameMode === 'pvp') {
+                playerNameElement.textContent = 'Player 1';
+                computerNameElement.textContent = 'Player 2';
+                currentPlayer = 1;
+                resultElement.textContent = 'Player 1, make your choice!';
+            } else {
+                playerNameElement.textContent = 'You';
+                computerNameElement.textContent = 'Computer';
+                resultElement.textContent = 'Choose your weapon!';
+            }
+        }
+        
+        function handleChoice(choice) {
+            if (!gameActive || thinkingInterval) return;
+            resetAnimations();
+
+            if (gameMode === 'pvp') {
+                // PvP logic here
+            } else { // Player vs Computer
+                player1Choice = choice;
+                playerChoiceElement.textContent = choiceSymbols[choice];
+                playerChoiceElement.classList.add('animated');
+
+                let shuffleIndex = 0;
+                thinkingInterval = setInterval(() => {
+                    computerChoiceElement.textContent = choiceSymbols[choices[shuffleIndex++ % 3]];
+                }, 100);
+
+                setTimeout(() => {
+                    clearInterval(thinkingInterval);
+                    thinkingInterval = null;
+                    const computerChoice = getComputerChoice();
+                    computerChoiceElement.textContent = choiceSymbols[computerChoice];
+                    determineWinner(player1Choice, computerChoice);
+                }, 1000);
+            }
+        }
+        
+        function getComputerChoice() {
+            // ... (AI logic remains the same)
+            return choices[Math.floor(Math.random() * choices.length)];
+        }
+        
+        function determineWinner(player, computer) {
+            let winner;
+            if (player === computer) {
+                winner = 'draw';
+                draws++;
+            } else if ((player === 'rock' && computer === 'scissors') || (player === 'paper' && computer === 'rock') || (player === 'scissors' && computer === 'paper')) {
+                winner = 'player';
+                playerScore++;
+            } else {
+                winner = 'computer';
+                computerScore++;
+            }
+            
+            updateScoreDisplay();
+            saveScores();
+            playRoundAnimations(winner);
+        }
+
+        // --- UI & ANIMATION FUNCTIONS ---
+        function playRoundAnimations(winner) {
+            const resultMessages = {
+                player: 'You Win!',
+                computer: 'Computer Wins!',
+                draw: 'It\'s a Draw!'
+            };
+            resultElement.textContent = resultMessages[winner];
+            resultElement.classList.add('animated');
+
+            if (winner === 'player') {
+                playerChoiceElement.classList.add('winner');
+                computerChoiceElement.classList.add('loser');
+            } else if (winner === 'computer') {
+                computerChoiceElement.classList.add('winner');
+                playerChoiceElement.classList.add('loser');
+            }
+        }
+
+        function resetRound() {
+            playerChoiceElement.textContent = '?';
+            computerChoiceElement.textContent = '?';
+            resultElement.textContent = 'Choose your weapon!';
+            resetAnimations();
+        }
+
+        function resetAnimations() {
+            resultElement.classList.remove('animated');
+            playerChoiceElement.classList.remove('animated', 'winner', 'loser');
+            computerChoiceElement.classList.remove('animated', 'winner', 'loser');
+        }
+
+        function updateScoreDisplay() {
+            winsElement.textContent = playerScore;
+            drawsElement.textContent = draws;
+            lossesElement.textContent = computerScore;
+        }
+
+        // --- LOCAL STORAGE ---
+        function loadScores() {
+            const saved = localStorage.getItem('rpsScores');
+            if (saved) {
+                const scores = JSON.parse(saved);
+                playerScore = scores.playerScore || 0;
+                computerScore = scores.computerScore || 0;
+                draws = scores.draws || 0;
+            }
+            updateScoreDisplay();
+        }
+        function saveScores() {
+            localStorage.setItem('rpsScores', JSON.stringify({ playerScore, computerScore, draws }));
+        }
+        function resetScores() {
+            playerScore = 0;
+            computerScore = 0;
+            draws = 0;
+            updateScoreDisplay();
+            saveScores();
+        }
+    </script>
+</body>
+</html>

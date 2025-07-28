@@ -1,0 +1,430 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <title>Escape the Maze</title>
+    <style>
+        :root {
+            --primary-color: #6e45e2; --secondary-color: #88d3ce; --accent-color: #ff7e5f;
+            --dark-color: #1a1a2e; --light-color: #f8f9fa; --success-color: #4cc9f0;
+            --warning-color: #f72585; --player2-color: #42a5f5;
+        }
+        
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(-45deg, #1a1a2e, #16213e, #0f3460, #1a2a6c);
+            background-size: 400% 400%; margin: 0; padding: 0;
+            display: flex; flex-direction: column; align-items: center;
+            min-height: 100vh; color: var(--light-color);
+            animation: gradientBG 15s ease infinite;
+            overflow: hidden; /* Lock scroll bar */
+        }
+        
+        @keyframes gradientBG { 0% { background-position: 0% 50%; } 50% { background-position: 100% 50%; } 100% { background-position: 0% 50%; } }
+        
+        .header-bar {
+            width: 100%;
+            padding: 15px 20px;
+            box-sizing: border-box;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        
+        .header-title {
+            font-size: 1.5rem;
+            font-weight: bold;
+            background: linear-gradient(to right, var(--secondary-color), var(--accent-color));
+            -webkit-background-clip: text; background-clip: text; color: transparent;
+        }
+
+        .header-buttons { display: flex; gap: 10px; }
+
+        .header-btn {
+            background: rgba(255, 255, 255, 0.1); color: white; border: 1px solid rgba(255, 255, 255, 0.2);
+            padding: 8px 16px; border-radius: 50px; cursor: pointer;
+            font-size: 0.9rem; transition: all 0.3s;
+        }
+        .header-btn:hover { background: rgba(255, 255, 255, 0.2); transform: translateY(-2px); }
+        
+        .game-container {
+            background-color: rgba(26, 26, 46, 0.85); border-radius: 20px;
+            padding: 20px; box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+            width: 95%; max-width: 800px; text-align: center;
+            backdrop-filter: blur(10px); border: 1px solid rgba(255, 255, 255, 0.1);
+            animation: float 6s ease-in-out infinite;
+        }
+        
+        @keyframes float { 0% { transform: translateY(0px); } 50% { transform: translateY(-10px); } 100% { transform: translateY(0px); } }
+        
+        h1 { margin-top: 0; font-size: 2.5rem; letter-spacing: 1px; }
+        
+        .controls { margin: 20px 0; display: flex; justify-content: center; gap: 15px; flex-wrap: wrap; }
+        
+        button {
+            background: linear-gradient(45deg, var(--primary-color), var(--accent-color));
+            color: white; border: none; padding: 12px 25px; border-radius: 50px;
+            cursor: pointer; font-size: 1rem; transition: all 0.3s;
+            box-shadow: 0 4px 15px rgba(110, 69, 226, 0.4); font-weight: 600;
+        }
+        button:hover { transform: translateY(-3px); box-shadow: 0 8px 20px rgba(110, 69, 226, 0.6); }
+        button:disabled { background: #555; cursor: not-allowed; box-shadow: none; transform: none; }
+        
+        .maze-container { position: relative; margin: 20px auto; background-color: rgba(15, 52, 96, 0.7); border-radius: 8px; }
+        
+        .cell { float: left; box-sizing: border-box; transition: all 0.2s ease; }
+        .wall { background: linear-gradient(135deg, #1a2a6c, #0f3460); box-shadow: inset 0 0 10px rgba(0, 0, 0, 0.3); }
+        .path { background-color: rgba(26, 26, 46, 0.7); }
+        .solution { background-color: rgba(255, 255, 0, 0.3) !important; }
+        
+        .player, .player2 { border-radius: 50%; position: relative; z-index: 2; transition: all 0.1s linear; }
+        .player { background-color: var(--success-color); box-shadow: 0 0 15px rgba(76, 201, 240, 0.7); }
+        .player2 { background-color: var(--player2-color); box-shadow: 0 0 15px rgba(66, 165, 245, 0.7); }
+
+        .turn-indicator { animation: pulseGlow 1.5s infinite; }
+        @keyframes pulseGlow { 0%{box-shadow: 0 0 15px var(--glow-color);} 50%{box-shadow: 0 0 25px var(--glow-color), 0 0 10px var(--glow-color) inset;} 100%{box-shadow: 0 0 15px var(--glow-color);} }
+        
+        .exit { background-color: var(--warning-color); animation: pulseExit 1.5s infinite; box-shadow: 0 0 20px rgba(247, 37, 133, 0.6); }
+        @keyframes pulseExit { 0% { opacity: 0.8; } 50% { opacity: 1; } 100% { opacity: 0.8; } }
+        
+        .stats { display: flex; justify-content: space-around; margin-top: 20px; background-color: rgba(255, 255, 255, 0.1); padding: 15px; border-radius: 12px; }
+        .stat { font-size: 1.2rem; font-weight: 600; color: var(--secondary-color); }
+        .stat span { color: white; font-weight: normal; }
+        
+        .modal {
+            display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background-color: rgba(0, 0, 0, 0.9); z-index: 100;
+            justify-content: center; align-items: center; backdrop-filter: blur(5px);
+        }
+        .modal-content {
+            background: linear-gradient(135deg, rgba(26, 26, 46, 0.95), rgba(22, 33, 62, 0.95));
+            padding: 30px; border-radius: 20px; text-align: center;
+            max-width: 500px; width: 90%; box-shadow: 0 15px 35px rgba(0, 0, 0, 0.5);
+            animation: modalFadeIn 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+        }
+        @keyframes modalFadeIn { from { opacity: 0; transform: translateY(-50px); } to { opacity: 1; transform: translateY(0); } }
+        .modal h2 { font-size: 2.2rem; color: transparent; background: linear-gradient(to right, var(--secondary-color), var(--accent-color)); -webkit-background-clip: text; background-clip: text; margin-bottom: 15px; }
+        .modal p { font-size: 1.1rem; line-height: 1.6; margin-bottom: 25px; color: rgba(255, 255, 255, 0.8); }
+        
+        .difficulty-selector h3 { color: var(--secondary-color); margin-bottom: 15px; font-size: 1.2rem; }
+        .difficulty-btn { margin: 8px; padding: 10px 20px; background-color: rgba(255, 255, 255, 0.1); border: 1px solid rgba(255, 255, 255, 0.2); }
+        .difficulty-btn:hover, .difficulty-btn.selected { background-color: rgba(255, 255, 255, 0.2); transform: translateY(-3px); }
+
+        .mobile-controls {
+            display: none; position: fixed; bottom: 20px; left: 50%;
+            transform: translateX(-50%); z-index: 99;
+            width: 180px;
+        }
+        .mobile-controls .d-pad { display: grid; grid-template-columns: 1fr 1fr 1fr; grid-template-rows: 1fr 1fr 1fr; gap: 5px; }
+        .d-pad button { width: 50px; height: 50px; font-size: 24px; background: rgba(0,0,0,0.4); border: 1px solid rgba(255,255,255,0.3); }
+        .d-pad .placeholder { visibility: hidden; }
+        
+        @media (pointer: coarse), (max-width: 768px) {
+            .mobile-controls { display: block; }
+            .game-container { padding: 15px; width: auto; margin: 15px; animation: none; }
+            h1 { font-size: 1.8rem; }
+        }
+    </style>
+</head>
+<body>
+    <div class="header-bar">
+        <div class="header-buttons">
+            <a href="/" class="header-btn">Back</a>
+            <button id="newGameHeaderBtn" class="header-btn">New Game</button>
+            <button id="instructionsBtn" class="header-btn">Help</button>
+        </div>
+    </div>
+
+    <div class="game-container">
+        <h1>Escape the Maze</h1>
+        <div class="controls">
+            <button id="solveBtn">Show Solution</button>
+        </div>
+        <div class="maze-container" id="maze"></div>
+        <div class="stats">
+            <div class="stat">Moves: <span id="moveCount">0</span></div>
+            <div class="stat">Time: <span id="timeCount">0</span>s</div>
+        </div>
+    </div>
+    
+    <div class="modal" id="startModal">
+        <div class="modal-content">
+            <h2>Welcome!</h2>
+            <div class="game-mode">
+                <label><input type="radio" name="gameMode" value="single" checked> Single Player</label>
+                <label><input type="radio" name="gameMode" value="vsComputer"> Player vs Computer</label>
+            </div>
+            <div class="difficulty-selector">
+                <h3>Select Difficulty</h3>
+                <button class="difficulty-btn" data-difficulty="easy">Easy</button>
+                <button class="difficulty-btn selected" data-difficulty="medium">Medium</button>
+                <button class="difficulty-btn" data-difficulty="hard">Hard</button>
+            </div>
+            <button id="startGameBtn">Start Game</button>
+        </div>
+    </div>
+    
+    <div class="modal" id="winModal">
+        <div class="modal-content">
+            <h2 id="winTitle">Congratulations!</h2>
+            <p id="winMessage">You escaped the maze!</p>
+            <p>Moves: <span id="finalMoves">0</span> | Time: <span id="finalTime">0</span>s</p>
+            <button id="playAgainBtn">Play Again</button>
+        </div>
+    </div>
+
+    <div class="modal" id="instructionsModal">
+        <div class="modal-content">
+            <h2>How to Play</h2>
+            <p>Use the **Arrow Keys** on your keyboard or the **on-screen buttons** to navigate the player to the glowing red exit.</p>
+            <p>Good luck!</p>
+            <button id="closeInstructionsBtn">Got it!</button>
+        </div>
+    </div>
+
+    <div class="mobile-controls">
+        <div class="d-pad">
+            <div class="placeholder"></div><button data-dir="up">▲</button><div class="placeholder"></div>
+            <button data-dir="left">◄</button><div class="placeholder"></div><button data-dir="right">►</button>
+            <div class="placeholder"></div><button data-dir="down">▼</button><div class="placeholder"></div>
+        </div>
+    </div>
+
+    <script>
+        // Game variables
+        let maze = [], playerPosition = { x: 1, y: 1 }, player2Position = null;
+        let exitPosition = { x: 1, y: 1 }, moveCount = 0, startTime = 0;
+        let timerInterval = null, currentTime = 0, gameMode = 'single', difficulty = 'medium';
+        let playerTurn = 1, showingSolution = false;
+
+        // DOM elements
+        const mazeElement = document.getElementById('maze');
+        const moveCountElement = document.getElementById('moveCount');
+        const timeCountElement = document.getElementById('timeCount');
+        const startModal = document.getElementById('startModal');
+        const winModal = document.getElementById('winModal');
+        const instructionsModal = document.getElementById('instructionsModal');
+        const finalMovesElement = document.getElementById('finalMoves');
+        const finalTimeElement = document.getElementById('finalTime');
+        const winTitleElement = document.getElementById('winTitle');
+        const winMessageElement = document.getElementById('winMessage');
+        const solveBtn = document.getElementById('solveBtn');
+        const startGameBtn = document.getElementById('startGameBtn');
+        const newGameHeaderBtn = document.getElementById('newGameHeaderBtn');
+        const playAgainBtn = document.getElementById('playAgainBtn');
+        const instructionsBtn = document.getElementById('instructionsBtn');
+        const closeInstructionsBtn = document.getElementById('closeInstructionsBtn');
+
+        function init() {
+            startModal.style.display = 'flex';
+            
+            newGameHeaderBtn.addEventListener('click', () => startModal.style.display = 'flex');
+            startGameBtn.addEventListener('click', startGame);
+            playAgainBtn.addEventListener('click', () => { winModal.style.display = 'none'; startModal.style.display = 'flex'; });
+            solveBtn.addEventListener('click', showSolution);
+            instructionsBtn.addEventListener('click', () => instructionsModal.style.display = 'flex');
+            closeInstructionsBtn.addEventListener('click', () => instructionsModal.style.display = 'none');
+            
+            document.querySelectorAll('[name="gameMode"]').forEach(radio => radio.onchange = (e) => gameMode = e.target.value);
+            document.querySelectorAll('.difficulty-btn').forEach(btn => {
+                btn.onclick = (e) => {
+                    difficulty = e.target.dataset.difficulty;
+                    document.querySelectorAll('.difficulty-btn').forEach(b => b.classList.remove('selected'));
+                    e.target.classList.add('selected');
+                }
+            });
+            
+            document.addEventListener('keydown', handleKeyPress);
+            document.querySelectorAll('.d-pad button').forEach(button => {
+                button.addEventListener('click', () => {
+                    const dir = button.dataset.dir;
+                    const moves = { up: {dx:0, dy:-1}, down: {dx:0, dy:1}, left: {dx:-1, dy:0}, right: {dx:1, dy:0} };
+                    movePlayer(moves[dir].dx, moves[dir].dy);
+                });
+            });
+        }
+
+        function startGame() {
+            startModal.style.display = 'none';
+            moveCount = 0; currentTime = 0; playerTurn = 1;
+            moveCountElement.textContent = '0'; timeCountElement.textContent = '0';
+            
+            if (timerInterval) clearInterval(timerInterval);
+            
+            const size = { easy: 15, medium: 21, hard: 29 }[difficulty];
+            generateMaze(size, size);
+            
+            playerPosition = { x: 1, y: 1 };
+            player2Position = (gameMode === 'vsComputer') ? { x: size - 2, y: size - 2 } : null;
+            exitPosition = { x: size - 2, y: size - 2 };
+            
+            renderMaze();
+            
+            startTime = Date.now();
+            timerInterval = setInterval(updateTimer, 1000);
+            
+            solveBtn.style.display = gameMode !== 'vsComputer' ? 'block' : 'none';
+            solveBtn.disabled = false;
+        }
+
+        function generateMaze(width, height) {
+            maze = Array(height).fill().map(() => Array(width).fill(1));
+            function carve(x, y) {
+                maze[y][x] = 0;
+                const directions = [{dx:2,dy:0},{dx:-2,dy:0},{dx:0,dy:2},{dx:0,dy:-2}].sort(() => Math.random() - 0.5);
+                for (let {dx, dy} of directions) {
+                    const [nx, ny] = [x + dx, y + dy];
+                    if (ny > 0 && ny < height - 1 && nx > 0 && nx < width - 1 && maze[ny][nx] === 1) {
+                        maze[ny - dy/2][nx - dx/2] = 0;
+                        carve(nx, ny);
+                    }
+                }
+            }
+            carve(1, 1);
+        }
+
+        function renderMaze() {
+            mazeElement.innerHTML = '';
+            const cellSize = Math.min(30, (Math.min(window.innerWidth, 800) * 0.9) / maze.length);
+            mazeElement.style.width = `${maze[0].length * cellSize}px`;
+            mazeElement.style.height = `${maze.length * cellSize}px`;
+            
+            for (let y = 0; y < maze.length; y++) {
+                for (let x = 0; x < maze[y].length; x++) {
+                    const cell = document.createElement('div');
+                    cell.className = 'cell ' + (maze[y][x] === 1 ? 'wall' : 'path');
+                    cell.style.width = `${cellSize}px`; cell.style.height = `${cellSize}px`;
+                    
+                    if (x === playerPosition.x && y === playerPosition.y) {
+                        cell.classList.add('player');
+                        if (playerTurn === 1) cell.classList.add('turn-indicator');
+                        cell.style.setProperty('--glow-color', 'rgba(76, 201, 240, 0.9)');
+                    }
+                    if (player2Position && x === player2Position.x && y === player2Position.y) {
+                        cell.classList.add('player2');
+                        if (playerTurn === 2) cell.classList.add('turn-indicator');
+                        cell.style.setProperty('--glow-color', 'rgba(66, 165, 245, 0.9)');
+                    }
+                    if (x === exitPosition.x && y === exitPosition.y) cell.classList.add('exit');
+                    mazeElement.appendChild(cell);
+                }
+            }
+        }
+
+        function handleKeyPress(e) {
+            if (startModal.style.display === 'flex' || winModal.style.display === 'flex') return;
+            const moves = { ArrowUp: {dx:0, dy:-1}, ArrowDown: {dx:0, dy:1}, ArrowLeft: {dx:-1, dy:0}, ArrowRight: {dx:1, dy:0} };
+            if (moves[e.key]) {
+                e.preventDefault();
+                movePlayer(moves[e.key].dx, moves[e.key].dy);
+            }
+        }
+
+        function movePlayer(dx, dy) {
+            if (gameMode === 'vsComputer' && playerTurn === 2) return;
+            let currentPos = (gameMode === 'vsComputer' || playerTurn === 1) ? playerPosition : player2Position;
+            const newX = currentPos.x + dx;
+            const newY = currentPos.y + dy;
+
+            if (newX >= 0 && newX < maze[0].length && newY >= 0 && newY < maze.length && maze[newY][newX] === 0) {
+                currentPos.x = newX;
+                currentPos.y = newY;
+                moveCount++;
+                moveCountElement.textContent = moveCount;
+                if (!checkWin()) {
+                    if (gameMode === 'vsComputer') {
+                        playerTurn = 2;
+                        setTimeout(computerMove, 200);
+                    }
+                }
+                renderMaze();
+            }
+        }
+
+        function computerMove() {
+            if (showingSolution) return;
+            const path = findPath(player2Position, playerPosition); // AI targets the player
+            if (path && path.length > 1) {
+                player2Position = path[1];
+                if (!checkWin()) playerTurn = 1;
+                renderMaze();
+            } else {
+                playerTurn = 1; // No path found, give turn back
+            }
+        }
+
+        function findPath(start, end) {
+            const queue = [[start]];
+            const visited = new Set([`${start.x},${start.y}`]);
+            while (queue.length > 0) {
+                const path = queue.shift();
+                const current = path[path.length - 1];
+                if (current.x === end.x && current.y === end.y) return path;
+                const dirs = [{dx:1,dy:0},{dx:-1,dy:0},{dx:0,dy:1},{dx:0,dy:-1}];
+                for (let {dx, dy} of dirs) {
+                    const [nx, ny] = [current.x + dx, current.y + dy];
+                    if (nx >= 0 && nx < maze[0].length && ny >= 0 && ny < maze.length && maze[ny][nx] === 0 && !visited.has(`${nx},${ny}`)) {
+                        visited.add(`${nx},${ny}`);
+                        queue.push([...path, { x: nx, y: ny }]);
+                    }
+                }
+            }
+            return null;
+        }
+
+        function checkWin() {
+            let winner = null;
+            if (playerPosition.x === exitPosition.x && playerPosition.y === exitPosition.y) winner = 1;
+            if (player2Position && player2Position.x === exitPosition.x && player2Position.y === exitPosition.y) winner = 2;
+
+            if (winner) {
+                clearInterval(timerInterval);
+                winTitleElement.textContent = (winner === 1 && gameMode === 'vsComputer') ? "You Win!" : `Player ${winner} Wins!`;
+                if (gameMode === 'single') winTitleElement.textContent = "You Escaped!";
+                if (winner === 2 && gameMode === 'vsComputer') winTitleElement.textContent = "Computer Wins!";
+                
+                finalMovesElement.textContent = moveCount;
+                finalTimeElement.textContent = currentTime;
+                winModal.style.display = 'flex';
+                return true;
+            }
+            return false;
+        }
+
+        function updateTimer() {
+            currentTime = Math.floor((Date.now() - startTime) / 1000);
+            timeCountElement.textContent = currentTime;
+        }
+
+        function showSolution() {
+            if (showingSolution) return;
+            solveBtn.disabled = true;
+            showingSolution = true;
+            const path = findPath(playerPosition, exitPosition);
+            if (path) {
+                let i = 0;
+                const interval = setInterval(() => {
+                    if (i < path.length) {
+                        const cell = mazeElement.children[path[i].y * maze[0].length + path[i].x];
+                        cell.classList.add('solution');
+                        i++;
+                    } else {
+                        clearInterval(interval);
+                        setTimeout(() => {
+                            document.querySelectorAll('.solution').forEach(c => c.classList.remove('solution'));
+                            solveBtn.disabled = false;
+                            showingSolution = false;
+                        }, 2000);
+                    }
+                }, 50);
+            } else {
+                solveBtn.disabled = false;
+                showingSolution = false;
+            }
+        }
+        
+        window.onload = init;
+    </script>
+</body>
+</html>

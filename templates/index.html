@@ -1,0 +1,603 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Mighty - Ultimate Collection of Fun Games</title>
+    
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    
+    <link rel="manifest" href="{{ url_for('static', filename='manifest.json') }}">
+    <meta name="theme-color" content="#1e272e">
+</head>
+<body data-user-logged-in="{{ 'true' if user else 'false' }}">
+    <div class="loader">
+        <div class="loader-spinner"></div>
+        <div class="loader-text">Loading 90's Game Hub...</div>
+    </div>
+    
+    <div class="modal-overlay" id="auth-modal-overlay">
+        <div class="modal-content">
+            <button class="modal-close">&times;</button>
+            
+            <form id="login-form" class="auth-form active">
+                <h2 class="modal-title">Login</h2>
+                <div id="login-error" class="modal-error"></div>
+                <input type="text" id="login-username" class="modal-input" placeholder="Username" required>
+                <input type="password" id="login-password" class="modal-input" placeholder="Password" required>
+                <button type="submit" class="modal-button">Login</button>
+                <div class="form-switcher">
+                    Don't have an account? <a class="form-switcher-link" data-form="register">Register</a><br>
+                    <a class="form-switcher-link" data-form="forgot">Forgot Password?</a>
+                </div>
+            </form>
+            
+            <form id="register-form" class="auth-form">
+                <h2 class="modal-title">Register</h2>
+                <div id="register-error" class="modal-error"></div>
+                <input type="text" id="register-username" class="modal-input" placeholder="Choose a Username" required>
+                <input type="password" id="register-password" class="modal-input" placeholder="Choose a Password" required>
+                <button type="submit" class="modal-button">Create Account</button>
+                <div class="form-switcher">
+                    Already have an account? <a class="form-switcher-link" data-form="login">Login</a>
+                </div>
+            </form>
+
+            <form id="forgot-form" class="auth-form">
+                <h2 class="modal-title">Reset Password</h2>
+                <p style="margin-bottom: 1.5rem; color: var(--light-gray);">Enter your username to reset your password. (This is a demo feature).</p>
+                <input type="text" id="forgot-username" class="modal-input" placeholder="Your Username" required>
+                <button type="submit" class="modal-button">Send Reset Link</button>
+                <div class="form-switcher">
+                    Remembered your password? <a class="form-switcher-link" data-form="login">Login</a>
+                </div>
+            </form>
+        </div>
+    </div>
+    
+    <div class="gradient-bg"></div>
+    <div class="floating-elements">
+        <div class="floating-element"></div>
+        <div class="floating-element"></div>
+        <div class="floating-element"></div>
+        <div class="floating-element"></div>
+    </div>
+    
+    <div class="game-launch-overlay">
+        <h2 class="game-launch-title" id="launch-game-title">Game Title</h2>
+        <div class="game-launch-countdown" id="launch-countdown">3</div>
+        <div class="game-launch-progress">
+            <div class="game-launch-progress-bar" id="launch-progress-bar"></div>
+        </div>
+        <button class="game-launch-cancel">Cancel</button>
+    </div>
+    
+    <div class="scroll-top">
+        <i class="fas fa-arrow-up"></i>
+    </div>
+    
+    <div class="container">
+        <header>
+            <div class="header-content">
+                <h1 class="logo">90's GAME HUB</h1>
+                <p class="tagline">Relive the golden era of gaming! Play classic 90s games, from arcade hits to nostalgic puzzles - all for free!</p>
+            </div>
+            <div id="auth-button-container">
+                {% if user %}
+                    <a href="{{ url_for('profile') }}" class="auth-button profile-btn">
+                        <i class="fas fa-user-circle" style="margin-right: 8px;"></i> {{ user.username }}
+                    </a>
+                {% else %}
+                    <button class="auth-button" id="auth-button">Login</button>
+                {% endif %}
+            </div>
+        </header>
+        
+        <div class="search-container">
+            <input type="text" class="search-bar" placeholder="Search games...">
+            <i class="fas fa-search search-icon"></i>
+        </div>
+        
+        <div class="categories">
+            <button class="category-btn active" data-category="all">All Games</button>
+            <button class="category-btn" data-category="classic">Classic</button>
+            <button class="category-btn" data-category="puzzle">Puzzle</button>
+            <button class="category-btn" data-category="arcade">Arcade</button>
+            <button class="category-btn" data-category="board">Board</button>
+            <button class="category-btn" data-category="adventure">Adventure</button>
+            <button class="category-btn" data-category="strategy">Strategy</button>
+        </div>
+        
+        <section class="leaderboard">
+            <div class="leaderboard-card">
+                <h2 class="leaderboard-title">🏆 Top 5 Most Played Games</h2>
+                <ul class="leaderboard-list" id="top-games-list">
+                </ul>
+            </div>
+            <div class="leaderboard-card">
+                <h2 class="leaderboard-title">🌟 Top 5 Players</h2>
+                <ul class="leaderboard-list" id="top-users-list">
+                </ul>
+            </div>
+        </section>
+
+        <section class="stats">
+            <div class="stat-card">
+                <div class="stat-number"><i class="fas fa-gamepad stat-icon"></i> 24+</div>
+                <div class="stat-label">Games Available</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-number"><i class="fas fa-users stat-icon"></i> 100+</div>
+                <div class="stat-label">Monthly Players</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-number"><i class="fas fa-trophy stat-icon"></i> 50+</div>
+                <div class="stat-label">Game Awards</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-number"><i class="fas fa-heart stat-icon"></i> 99%</div>
+                <div class="stat-label">Player Satisfaction</div>
+            </div>
+        </section>
+        
+        <section class="trending-carousel">
+            <h2 class="section-title">Trending Now</h2>
+            <div class="carousel-container">
+                <div class="carousel-item" data-game="{{ url_for('checkers') }}">
+                    <img src="{{ url_for('static', filename='images/checkers.png') }}" alt="Checkers">
+                    <div class="carousel-item-info">
+                        <h3 class="carousel-item-title">Checkers</h3>
+                        <p class="carousel-item-description">The classic board game of strategy where you capture your opponent's pieces by jumping over them.</p>
+                        <a href="{{ url_for('checkers') }}" class="game-play-btn">Play Now</a>
+                    </div>
+                </div>
+                <div class="carousel-item" data-game="{{ url_for('snake') }}">
+                    <img src="{{ url_for('static', filename='images/snake.png') }}" alt="Snake Game">
+                    <div class="carousel-item-info">
+                        <h3 class="carousel-item-title">Snake Game</h3>
+                        <p class="carousel-item-description">The classic mobile game that defined a generation of mobile gaming.</p>
+                        <a href="{{ url_for('snake') }}" class="game-play-btn">Play Now</a>
+                    </div>
+                </div>
+                <div class="carousel-item" data-game="{{ url_for('chess') }}">
+                    <img src="{{ url_for('static', filename='images/chess.png') }}" alt="chess">
+                    <div class="carousel-item-info">
+                        <h3 class="carousel-item-title">Chess</h3>
+                        <p class="carousel-item-description">The ultimate strategy game with kings, queens, and tactical battles. Challenge the AI or play with friends.</p>
+                        <a href="{{ url_for('chess') }}" class="game-play-btn">Play Now</a>
+                    </div>
+                </div>
+                <div class="carousel-item" data-game="{{ url_for('maze') }}">
+                    <img src="{{ url_for('static', filename='images/maze.png') }}" alt="Maze">
+                    <div class="carousel-item-info">
+                        <h3 class="carousel-item-title">Escape the Maze</h3>
+                        <p class="carousel-item-description">Navigate through complex mazes and find the exit before time runs out.</p>
+                        <a href="{{ url_for('maze') }}" class="game-play-btn">Play Now</a>
+                    </div>
+                </div>
+            </div>
+            <div class="carousel-nav">
+                <div class="carousel-dot active"></div>
+                <div class="carousel-dot"></div>
+                <div class="carousel-dot"></div>
+                <div class="carousel-dot"></div>
+            </div>
+        </section>
+        
+        <section class="featured">
+            <h2 class="section-title">All Games</h2>
+            <div class="game-grid">
+                <div class="game-card" data-categories="puzzle,strategy" data-game="{{ url_for('game_2048') }}">
+                    <div class="game-image-container">
+                        <img src="{{ url_for('static', filename='images/2048.png') }}" alt="2048" class="game-image">
+                        <div class="popular-badge">Popular</div>
+                        <div class="game-badge">Trending</div>
+                    </div>
+                    <div class="game-info">
+                        <h3 class="game-title">2048</h3>
+                        <p class="game-description">Combine numbered tiles to reach the 2048 tile in this addictive puzzle game!</p>
+                        <div class="game-meta">
+                            <span class="game-category">Puzzle</span>
+                            <a href="{{ url_for('game_2048') }}" class="game-play-btn">Play Now</a>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="game-card" data-categories="classic,board" data-game="{{ url_for('checkers') }}">
+                    <div class="game-image-container">
+                        <img src="{{ url_for('static', filename='images/checkers.png') }}" alt="Checkers" class="game-image">
+                        <div class="game-badge">Featured</div>
+                    </div>
+                    <div class="game-info">
+                        <h3 class="game-title">Checkers</h3>
+                        <p class="game-description">The classic board game of strategy where you capture your opponent's pieces by jumping over them.</p>
+                        <div class="game-meta">
+                            <span class="game-category">Board</span>
+                            <a href="{{ url_for('checkers') }}" class="game-play-btn">Play Now</a>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="game-card" data-categories="classic,board,strategy" data-game="{{ url_for('chess') }}">
+                    <div class="game-image-container">
+                        <img src="{{ url_for('static', filename='images/chess.png') }}" alt="Chess" class="game-image">
+                        <div class="new-badge">New</div>
+                    </div>
+                    <div class="game-info">
+                        <h3 class="game-title">Chess</h3>
+                        <p class="game-description">The ultimate strategy game with kings, queens, and tactical battles. Challenge the AI or play with friends.</p>
+                        <div class="game-meta">
+                            <span class="game-category">Strategy</span>
+                            <a href="{{ url_for('chess') }}" class="game-play-btn">Play Now</a>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="game-card" data-categories="arcade,popular" data-game="{{ url_for('flappy') }}">
+                    <div class="game-image-container">
+                        <img src="{{ url_for('static', filename='images/flappy.png') }}" alt="Flappy Bird" class="game-image">
+                    </div>
+                    <div class="game-info">
+                        <h3 class="game-title">Flappy Bird</h3>
+                        <p class="game-description">Navigate a bird through pipes by tapping to keep it airborne. How far can you go?</p>
+                        <div class="game-meta">
+                            <span class="game-category">Arcade</span>
+                            <a href="{{ url_for('flappy') }}" class="game-play-btn">Play Now</a>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="game-card" data-categories="arcade" data-game="{{ url_for('galaxy') }}">
+                    <div class="game-image-container">
+                        <img src="{{ url_for('static', filename='images/galaxy.png') }}" alt="Galaxy Shooter" class="game-image">
+                    </div>
+                    <div class="game-info">
+                        <h3 class="game-title">Galaxy Shooter</h3>
+                        <p class="game-description">Pilot your starship, blast through waves of alien invaders, and save the galaxy in this fast-paced arcade shooter.</p>
+                        <div class="game-meta">
+                            <span class="game-category">Arcade</span>
+                            <a href="{{ url_for('galaxy') }}" class="game-play-btn">Play Now</a>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="game-card" data-categories="classic" data-game="{{ url_for('hand') }}">
+                    <div class="game-image-container">
+                        <img src="{{ url_for('static', filename='images/hand.webp') }}" alt="Hand Cricket" class="game-image">
+                    </div>
+                    <div class="game-info">
+                        <h3 class="game-title">Hand Cricket</h3>
+                        <p class="game-description">The classic hand game where you predict scores and compete against the computer in this digital version.</p>
+                        <div class="game-meta">
+                            <span class="game-category">Classic</span>
+                            <a href="{{ url_for('hand') }}" class="game-play-btn">Play Now</a>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="game-card" data-categories="puzzle" data-game="{{ url_for('maze') }}">
+                    <div class="game-image-container">
+                        <img src="{{ url_for('static', filename='images/maze.png') }}" alt="Escape the Maze" class="game-image">
+                    </div>
+                    <div class="game-info">
+                        <h3 class="game-title">Escape the Maze</h3>
+                        <p class="game-description">Navigate through complex mazes and find the exit before time runs out. Multiple difficulty levels.</p>
+                        <div class="game-meta">
+                            <span class="game-category">Puzzle</span>
+                            <a href="{{ url_for('maze') }}" class="game-play-btn">Play Now</a>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="game-card" data-categories="puzzle" data-game="{{ url_for('memory') }}">
+                    <div class="game-image-container">
+                        <img src="{{ url_for('static', filename='images/memory.png') }}" alt="Memory Game" class="game-image">
+                    </div>
+                    <div class="game-info">
+                        <h3 class="game-title">Memory Game</h3>
+                        <p class="game-description">Test your memory by matching pairs of cards in this challenging game with multiple themes.</p>
+                        <div class="game-meta">
+                            <span class="game-category">Puzzle</span>
+                            <a href="{{ url_for('memory') }}" class="game-play-btn">Play Now</a>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="game-card" data-categories="puzzle" data-game="{{ url_for('mine') }}">
+                    <div class="game-image-container">
+                        <img src="{{ url_for('static', filename='images/mine.png') }}" alt="Minesweeper" class="game-image">
+                    </div>
+                    <div class="game-info">
+                        <h3 class="game-title">Minesweeper</h3>
+                        <p class="game-description">Classic minefield puzzle game where you must clear the board without hitting any mines. Multiple difficulty levels available.</p>
+                        <div class="game-meta">
+                            <span class="game-category">Puzzle</span>
+                            <a href="{{ url_for('mine') }}" class="game-play-btn">Play Now</a>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="game-card" data-categories="board classic" data-game="{{ url_for('monopoly') }}">
+                    <div class="game-image-container">
+                        <img src="{{ url_for('static', filename='images/monopoly.webp') }}" alt="Monopoly" class="game-image">
+                    </div>
+                    <div class="game-info">
+                        <h3 class="game-title">Monopoly</h3>
+                        <p class="game-description">Buy, sell, and trade properties to build a real estate empire and bankrupt your opponents in this classic board game.</p>
+                        <div class="game-meta">
+                            <span class="game-category">Board Game</span>
+                            <a href="{{ url_for('monopoly') }}" class="game-play-btn">Play Now</a>
+                        </div>
+                    </div>
+                </div>
+   
+                <div class="game-card" data-categories="arcade" data-game="{{ url_for('rabbit') }}">
+                    <div class="game-image-container">
+                        <img src="{{ url_for('static', filename='images/rabbit.png') }}" alt="Rabbit Run" class="game-image">
+                    </div>
+                    <div class="game-info">
+                        <h3 class="game-title">Rabbit Run</h3>
+                        <p class="game-description">Jump over obstacles in this endless runner featuring a rabbit. Perfect for quick gaming sessions.</p>
+                        <div class="game-meta">
+                            <span class="game-category">Arcade</span>
+                            <a href="{{ url_for('rabbit') }}" class="game-play-btn">Play Now</a>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="game-card" data-categories="classic" data-game="{{ url_for('rps') }}">
+                    <div class="game-image-container">
+                        <img src="{{ url_for('static', filename='images/rps.png') }}" alt="Rock Paper Scissors" class="game-image">
+                    </div>
+                    <div class="game-info">
+                        <h3 class="game-title">Rock Paper Scissors</h3>
+                        <p class="game-description">The classic game of chance with multiple difficulty levels and tournament mode.</p>
+                        <div class="game-meta">
+                            <span class="game-category">Classic</span>
+                            <a href="{{ url_for('rps') }}" class="game-play-btn">Play Now</a>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="game-card" data-categories="arcade" data-game="{{ url_for('snake') }}">
+                    <div class="game-image-container">
+                        <img src="{{ url_for('static', filename='images/snake.png') }}" alt="Snake Game" class="game-image">
+                    </div>
+                    <div class="game-info">
+                        <h3 class="game-title">Snake Game</h3>
+                        <p class="game-description">Guide the snake to eat food and grow as long as possible without crashing into walls or yourself.</p>
+                        <div class="game-meta">
+                            <span class="game-category">Arcade</span>
+                            <a href="{{ url_for('snake') }}" class="game-play-btn">Play Now</a>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="game-card" data-categories="arcade,puzzle" data-game="{{ url_for('tetra') }}">
+                    <div class="game-image-container">
+                        <img src="{{ url_for('static', filename='images/tetris.png') }}" alt="Tetris" class="game-image">
+                        <div class="game-badge">Popular</div>
+                    </div>
+                    <div class="game-info">
+                        <h3 class="game-title">Tetris</h3>
+                        <p class="game-description">The iconic block-stacking puzzle game that challenges your spatial awareness and speed.</p>
+                        <div class="game-meta">
+                            <span class="game-category">Puzzle</span>
+                            <a href="{{ url_for('tetra') }}" class="game-play-btn">Play Now</a>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="game-card" data-categories="classic,puzzle" data-game="{{ url_for('tictactoe') }}">
+                    <div class="game-image-container">
+                        <img src="{{ url_for('static', filename='images/ttt.png') }}" alt="Tic Tac Toe" class="game-image">
+                    </div>
+                    <div class="game-info">
+                        <h3 class="game-title">Tic Tac Toe</h3>
+                        <p class="game-description">The timeless strategy game with AI opponents of varying difficulty. Can you beat the expert?</p>
+                        <div class="game-meta">
+                            <span class="game-category">Strategy</span>
+                            <a href="{{ url_for('tictactoe') }}" class="game-play-btn">Play Now</a>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="game-card" data-categories="classic" data-game="{{ url_for('truth') }}">
+                    <div class="game-image-container">
+                        <img src="{{ url_for('static', filename='images/truth.png') }}" alt="Truth or Dare" class="game-image">
+                    </div>
+                    <div class="game-info">
+                        <h3 class="game-title">Truth or Dare</h3>
+                        <p class="game-description">The classic party game with challenging questions and fun dares. Perfect for groups!</p>
+                        <div class="game-meta">
+                            <span class="game-category">Classic</span>
+                            <a href="{{ url_for('truth') }}" class="game-play-btn">Play Now</a>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="game-card" data-categories="puzzle" data-game="{{ url_for('water') }}">
+                    <div class="game-image-container">
+                        <img src="{{ url_for('static', filename='images/water.png') }}" alt="Water Sort" class="game-image">
+                    </div>
+                    <div class="game-info">
+                        <h3 class="game-title">Water Sort</h3>
+                        <p class="game-description">Sort colored water in tubes until all colors are separated in this relaxing puzzle game.</p>
+                        <div class="game-meta">
+                            <span class="game-category">Puzzle</span>
+                            <a href="{{ url_for('water') }}" class="game-play-btn">Play Now</a>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="game-card" data-categories="arcade" data-game="{{ url_for('whackamole') }}">
+                    <div class="game-image-container">
+                        <img src="{{ url_for('static', filename='images/whack.webp') }}" alt="Whack a Mole" class="game-image">
+                    </div>
+                    <div class="game-info">
+                        <h3 class="game-title">Whack a Mole</h3>
+                        <p class="game-description">Test your reflexes by whacking moles as they pop up from holes. How high can you score?</p>
+                        <div class="game-meta">
+                            <span class="game-category">Arcade</span>
+                            <a href="{{ url_for('whackamole') }}" class="game-play-btn">Play Now</a>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="game-card" data-categories="puzzle" data-game="{{ url_for('word') }}">
+                    <div class="game-image-container">
+                        <img src="{{ url_for('static', filename='images/word.png') }}" alt="Word Puzzle" class="game-image">
+                    </div>
+                    <div class="game-info">
+                        <h3 class="game-title">Word Puzzle</h3>
+                        <p class="game-description">Find hidden words in a grid of letters in this challenging word search with multiple categories.</p>
+                        <div class="game-meta">
+                            <span class="game-category">Puzzle</span>
+                            <a href="{{ url_for('word') }}" class="game-play-btn">Play Now</a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+        
+        <section class="featured">
+            <h2 class="section-title">Coming Soon</h2>
+            <div class="game-grid">
+                <div class="game-card" data-categories="classic,arcade" data-game="{{ url_for('nokiagame') }}">
+                    <div class="game-image-container">
+                        <img src="{{ url_for('static', filename='images/cricket.jpg') }}" alt="Nokia Game" class="game-image">
+                        <div class="coming-soon-badge">Coming Soon</div>
+                    </div>
+                    <div class="game-info">
+                        <h3 class="game-title">Classic Cricket</h3>
+                        <p class="game-description">The classic mobile game that defined a generation of mobile gaming. Simple, addictive fun!</p>
+                        <div class="game-meta">
+                            <span class="game-category">Classic</span>
+                            <a href="#" onclick="return false;" class="coming-soon-btn">Coming Soon</a>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="game-card" data-categories="arcade,adventure" data-game="{{ url_for('contra') }}">
+                    <div class="game-image-container">
+                        <img src="{{ url_for('static', filename='images/gun.jpg') }}" alt="Contra" class="game-image">
+                        <div class="coming-soon-badge">Coming Soon</div>
+                    </div>
+                    <div class="game-info">
+                        <h3 class="game-title">Gun Fight</h3>
+                        <p class="game-description">Classic run-and-gun action game with intense shooting gameplay and challenging levels.</p>
+                        <div class="game-meta">
+                            <span class="game-category">Arcade</span>
+                            <a href="#" onclick="return false;" class="coming-soon-btn">Coming Soon</a>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="game-card" data-categories="board" data-game="{{ url_for('ludo') }}">
+                    <div class="game-image-container">
+                        <img src="{{ url_for('static', filename='images/ludo.jpeg') }}" alt="Ludo" class="game-image">
+                        <div class="coming-soon-badge">Coming Soon</div>
+                    </div>
+                    <div class="game-info">
+                        <h3 class="game-title">Ludo</h3>
+                        <p class="game-description">The classic family board game brought to your browser. Play with friends or against the AI.</p>
+                        <div class="game-meta">
+                            <span class="game-category">Board</span>
+                            <a href="#" onclick="return false;" class="coming-soon-btn">Coming Soon</a>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="game-card" data-categories="adventure,arcade" data-game="{{ url_for('mario') }}">
+                    <div class="game-image-container">
+                        <img src="{{ url_for('static', filename='images/mario.webp') }}" alt="Super Mario" class="game-image">
+                        <div class="coming-soon-badge">Coming Soon</div>
+                    </div>
+                    <div class="game-info">
+                        <h3 class="game-title">Super Mario</h3>
+                        <p class="game-description">Classic platformer adventure with jumping, coins, and enemies to defeat. Relive the nostalgia!</p>
+                        <div class="game-meta">
+                            <span class="game-category">Adventure</span>
+                            <a href="#" onclick="return false;" class="coming-soon-btn">Coming Soon</a>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="game-card" data-categories="classic,board" data-game="{{ url_for('solitaire') }}">
+                    <div class="game-image-container">
+                        <img src="{{ url_for('static', filename='images/solitare.png') }}" alt="Solitaire" class="game-image">
+                        <div class="coming-soon-badge">Coming Soon</div>
+                    </div>
+                    <div class="game-info">
+                        <h3 class="game-title">Solitaire</h3>
+                        <p class="game-description">The classic card game that has entertained millions. Arrange cards in order by suit and number.</p>
+                        <div class="game-meta">
+                            <span class="game-category">Classic</span>
+                            <a href="#" onclick="return false;" class="coming-soon-btn">Coming Soon</a>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="game-card" data-categories="board" data-game="{{ url_for('snakeandladder') }}">
+                    <div class="game-image-container">
+                        <img src="{{ url_for('static', filename='images/s&l.png') }}" alt="Snake & Ladder" class="game-image">
+                        <div class="coming-soon-badge">Coming Soon</div>
+                    </div>
+                    <div class="game-info">
+                        <h3 class="game-title">Snake & Ladder</h3>
+                        <p class="game-description">Climb ladders and avoid snakes in this classic board game of chance. Fun for all ages!</p>
+                        <div class="game-meta">
+                            <span class="game-category">Board</span>
+                            <a href="#" onclick="return false;" class="coming-soon-btn">Coming Soon</a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+    </div>
+    
+    <footer>
+        <div class="footer-logo">90's GAME HUB</div>
+        <div class="footer-links">
+            <a href="{{ url_for('about') }}" class="footer-link">About Us</a>
+            <a href="{{ url_for('contact') }}" class="footer-link">Contact</a>
+            <a href="{{ url_for('privacy') }}" class="footer-link">Privacy Policy</a>
+            <a href="{{ url_for('terms') }}" class="footer-link">Terms of Service</a>
+        </div>
+        <div class="social-links">
+            <a href="#" class="social-link"><i class="fab fa-twitter"></i></a>
+            <a href="#" class="social-link"><i class="fab fa-facebook"></i></a>
+            <a href="#" class="social-link"><i class="fab fa-instagram"></i></a>
+            <a href="#" class="social-link"><i class="fab fa-youtube"></i></a>
+            <a href="#" class="social-link"><i class="fab fa-discord"></i></a>
+            <a href="#" class="social-link"><i class="fab fa-github"></i></a>
+        </div>
+        <p class="copyright">© 2025 90's Game Hub. All rights reserved.</p>
+    </footer>
+    
+    <script src="{{ url_for('static', filename='js/main.js') }}" defer></script>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            const isUserLoggedIn = document.body.dataset.userLoggedIn === 'true';
+            const authModal = document.getElementById('auth-modal-overlay');
+
+            // This logic is now handled by the main.js file to avoid duplication
+            // but is kept here as a reference for the login check.
+            document.querySelectorAll('.game-play-btn').forEach(button => {
+                button.addEventListener('click', function(event) {
+                    if (!isUserLoggedIn) {
+                        event.preventDefault(); // Stop the link from redirecting
+                        if (authModal) {
+                           authModal.style.display = 'flex'; // Show the login modal
+                        }
+                    }
+                });
+            });
+        });
+    </script>
+</body>
+</html>

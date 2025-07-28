@@ -1,0 +1,592 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Contact Us - 90's Game Hub</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css">
+    <style>
+        :root {
+            --primary: #6c5ce7;
+            --primary-light: #8579e8;
+            --secondary: #a29bfe;
+            --accent: #fd79a8;
+            --accent-light: #fe8db6;
+            --dark: #2d3436;
+            --darker: #1e272e;
+            --light: #f5f6fa;
+            --light-gray: #dfe6e9;
+            --success: #00b894;
+            --danger: #d63031;
+            --warning: #fdcb6e;
+            --info: #0984e3;
+        }
+        
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Poppins', 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+
+        html {
+            scroll-behavior: smooth;
+        }
+
+        body {
+            background-color: var(--darker);
+            color: var(--light);
+            overflow-x: hidden;
+            min-height: 100vh;
+            position: relative;
+        }
+        
+        /* Animated Gradient Background */
+        .gradient-bg {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: -3;
+            background: linear-gradient(-45deg, #1e272e, #2d3436, #6c5ce7, #fd79a8);
+            background-size: 400% 400%;
+            animation: gradientBG 15s ease infinite;
+        }
+        
+        @keyframes gradientBG {
+            0% { background-position: 0% 50%; }
+            50% { background-position: 100% 50%; }
+            100% { background-position: 0% 50%; }
+        }
+        
+        /* Floating Elements */
+        .floating-elements {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: -1;
+            overflow: hidden;
+            pointer-events: none;
+        }
+        
+        .floating-element {
+            position: absolute;
+            border-radius: 50%;
+            background: rgba(108, 92, 231, 0.1);
+            animation: float 15s infinite linear;
+            filter: blur(1px);
+        }
+        
+        .floating-element:nth-child(1) {
+            width: 80vh; height: 80vh; top: -20vh; left: -20vh; animation-delay: 0s;
+            background: radial-gradient(circle, rgba(108, 92, 231, 0.2) 0%, rgba(108, 92, 231, 0) 70%);
+        }
+        .floating-element:nth-child(2) {
+            width: 60vh; height: 60vh; bottom: -15vh; right: -15vh; animation-delay: 2s;
+            background: radial-gradient(circle, rgba(253, 121, 168, 0.2) 0%, rgba(253, 121, 168, 0) 70%);
+        }
+        .floating-element:nth-child(3) {
+            width: 40vh; height: 40vh; top: 30vh; right: -10vh; animation-delay: 4s;
+            background: radial-gradient(circle, rgba(162, 155, 254, 0.2) 0%, rgba(162, 155, 254, 0) 70%);
+        }
+        .floating-element:nth-child(4) {
+            width: 50vh; height: 50vh; bottom: 10vh; left: -15vh; animation-delay: 6s;
+            background: radial-gradient(circle, rgba(0, 184, 148, 0.2) 0%, rgba(0, 184, 148, 0) 70%);
+        }
+        
+        @keyframes float {
+            0% { transform: translate(0, 0) rotate(0deg); }
+            50% { transform: translate(20px, 20px) rotate(180deg); }
+            100% { transform: translate(0, 0) rotate(360deg); }
+        }
+        
+        /* Main Container */
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 2rem;
+            position: relative;
+        }
+        
+        /* Header */
+        header {
+            text-align: center;
+            margin-bottom: 3rem;
+            position: relative;
+            padding-top: 2rem;
+        }
+        
+        .logo {
+            font-size: 4rem;
+            font-weight: 800;
+            background: linear-gradient(45deg, var(--primary), var(--accent));
+            -webkit-background-clip: text;
+            background-clip: text;
+            color: transparent;
+            margin-bottom: 1rem;
+            letter-spacing: 2px;
+            text-shadow: 0 0 20px rgba(108, 92, 231, 0.3);
+            position: relative;
+            display: inline-block;
+        }
+        
+        .logo::after {
+            content: '';
+            position: absolute;
+            bottom: -10px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 100px;
+            height: 4px;
+            background: linear-gradient(90deg, var(--primary), var(--accent));
+            border-radius: 2px;
+            animation: pulseUnderline 2s infinite ease-in-out;
+        }
+        
+        @keyframes pulseUnderline {
+            0% { width: 100px; opacity: 0.8; }
+            50% { width: 150px; opacity: 1; }
+            100% { width: 100px; opacity: 0.8; }
+        }
+        
+        nav {
+            display: flex;
+            justify-content: center;
+            gap: 1.5rem;
+            margin-top: 1.5rem;
+            flex-wrap: wrap;
+        }
+        
+        nav a {
+            color: var(--light);
+            text-decoration: none;
+            font-weight: 600;
+            padding: 0.7rem 1.5rem;
+            border-radius: 50px;
+            transition: all 0.3s ease;
+            position: relative;
+            background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(5px);
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+        }
+        
+        nav a:hover {
+            background: linear-gradient(45deg, var(--primary), var(--accent));
+            transform: translateY(-3px);
+            box-shadow: 0 8px 25px rgba(108, 92, 231, 0.3);
+            color: white;
+        }
+        
+        nav a.active {
+            background: linear-gradient(45deg, var(--primary), var(--accent));
+            color: white;
+            box-shadow: 0 8px 25px rgba(108, 92, 231, 0.3);
+        }
+
+        /* Content Sections */
+        .content-section {
+            background: rgba(45, 52, 54, 0.7);
+            border-radius: 15px;
+            padding: 2.5rem;
+            margin-bottom: 3rem;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+            opacity: 0;
+            transform: translateY(20px);
+            animation: fadeInUp 1s forwards;
+            animation-play-state: paused;
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+        }
+
+        .content-section:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 15px 35px rgba(108, 92, 231, 0.4);
+            border-color: var(--primary);
+        }
+        
+        @keyframes fadeInUp {
+            to {
+                transform: translateY(0);
+                opacity: 1;
+            }
+        }
+        
+        h1 {
+            font-size: 2.5rem;
+            margin-bottom: 1.5rem;
+            text-align: center;
+            position: relative;
+            background: linear-gradient(45deg, var(--primary), var(--accent));
+            -webkit-background-clip: text;
+            background-clip: text;
+            color: transparent;
+            font-weight: 800;
+        }
+        
+        h1::after {
+            content: '';
+            display: block;
+            width: 100px;
+            height: 4px;
+            background: linear-gradient(90deg, var(--primary), var(--accent));
+            margin: 0.5rem auto;
+            border-radius: 2px;
+        }
+        
+        h2 {
+            font-size: 1.8rem;
+            margin: 1.5rem 0 1rem;
+            color: var(--accent);
+            font-weight: 700;
+        }
+
+        .contact-grid {
+            display: grid;
+            grid-template-columns: 1fr 1.5fr;
+            gap: 2rem;
+            align-items: flex-start;
+        }
+
+        .contact-info-item {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+            margin-bottom: 1.5rem;
+        }
+
+        .contact-info-item i {
+            font-size: 1.5rem;
+            color: var(--accent);
+            width: 30px;
+            text-align: center;
+        }
+
+        .contact-info-item p {
+            margin: 0;
+            line-height: 1.6;
+        }
+
+        .contact-info-item a {
+            color: var(--light-gray);
+            text-decoration: none;
+            transition: color 0.3s ease;
+        }
+
+        .contact-info-item a:hover {
+            color: var(--accent);
+        }
+
+        form {
+            display: flex;
+            flex-direction: column;
+            gap: 1.5rem;
+        }
+
+        .form-group {
+            display: flex;
+            flex-direction: column;
+        }
+
+        label {
+            margin-bottom: 0.5rem;
+            font-weight: 600;
+            color: var(--light-gray);
+        }
+
+        input, textarea {
+            background: rgba(255, 255, 255, 0.1);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            border-radius: 8px;
+            padding: 0.8rem 1rem;
+            color: var(--light);
+            font-size: 1rem;
+            transition: all 0.3s ease;
+        }
+
+        input:focus, textarea:focus {
+            outline: none;
+            border-color: var(--primary);
+            box-shadow: 0 0 0 3px rgba(108, 92, 231, 0.3);
+        }
+        
+        textarea {
+            resize: vertical;
+            min-height: 120px;
+        }
+
+        .submit-btn {
+            align-self: flex-start;
+            background: linear-gradient(45deg, var(--primary), var(--accent));
+            color: white;
+            border: none;
+            padding: 0.8rem 2.5rem;
+            border-radius: 50px;
+            font-weight: 700;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            box-shadow: 0 5px 20px rgba(108, 92, 231, 0.3);
+        }
+
+        .submit-btn:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 8px 25px rgba(108, 92, 231, 0.4);
+        }
+        
+        /* Footer Styles */
+        footer {
+            background: rgba(30, 39, 46, 0.8);
+            padding: 3rem 0;
+            text-align: center;
+            margin-top: 3rem;
+            border-top: 1px solid rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(5px);
+        }
+        
+        .footer-links {
+            display: flex;
+            justify-content: center;
+            flex-wrap: wrap;
+            gap: 2rem;
+            margin-bottom: 1.5rem;
+        }
+        
+        .footer-links a {
+            color: var(--light-gray);
+            text-decoration: none;
+            transition: all 0.3s ease;
+            font-weight: 300;
+        }
+        
+        .footer-links a:hover {
+            color: var(--accent);
+            transform: translateY(-2px);
+        }
+        
+        .social-links-footer {
+            display: flex;
+            justify-content: center;
+            gap: 1.5rem;
+            margin-bottom: 2rem;
+        }
+        
+        .social-links-footer a {
+            color: var(--secondary);
+            font-size: 1.5rem;
+            transition: all 0.3s ease;
+            width: 45px;
+            height: 45px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: rgba(255, 255, 255, 0.05);
+            text-decoration: none;
+        }
+        
+        .social-links-footer a:hover {
+            color: var(--accent);
+            transform: translateY(-3px) scale(1.2);
+            background: rgba(253, 121, 168, 0.1);
+            box-shadow: 0 5px 15px rgba(253, 121, 168, 0.2);
+        }
+        
+        .copyright {
+            color: var(--light-gray);
+            font-size: 0.9rem;
+            opacity: 0.7;
+        }
+        
+        /* Scroll to Top Button */
+        .scroll-top {
+            position: fixed;
+            bottom: 2rem;
+            right: 2rem;
+            width: 50px;
+            height: 50px;
+            border-radius: 50%;
+            background: linear-gradient(45deg, var(--primary), var(--accent));
+            color: white;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            opacity: 0;
+            visibility: hidden;
+            box-shadow: 0 5px 20px rgba(108, 92, 231, 0.4);
+            z-index: 100;
+            border: none;
+        }
+        
+        .scroll-top.visible {
+            opacity: 1;
+            visibility: visible;
+        }
+        
+        .scroll-top:hover {
+            transform: translateY(-5px) scale(1.1);
+            box-shadow: 0 8px 25px rgba(108, 92, 231, 0.5);
+        }
+        
+        /* Responsive Styles */
+        @media (max-width: 1200px) {
+            .container { padding: 1.5rem; }
+            .logo { font-size: 3.5rem; }
+        }
+        
+        @media (max-width: 992px) {
+            .contact-grid { grid-template-columns: 1fr; }
+        }
+        
+        @media (max-width: 768px) {
+            .logo { font-size: 2.8rem; }
+            nav { gap: 1rem; }
+            nav a { padding: 0.6rem 1.2rem; font-size: 0.9rem; }
+            .content-section { padding: 1.8rem; }
+        }
+        
+        @media (max-width: 480px) {
+            .container { padding: 1rem; }
+            .logo { font-size: 2.2rem; }
+            .footer-links { gap: 1.5rem; flex-direction: column; }
+        }
+    </style>
+</head>
+<body>
+    <div class="gradient-bg"></div>
+    <div class="floating-elements">
+        <div class="floating-element"></div>
+        <div class="floating-element"></div>
+        <div class="floating-element"></div>
+        <div class="floating-element"></div>
+    </div>
+    
+    <header>
+        <div class="logo">90's Game Hub</div>
+        <nav>
+            <a href="index.html">Home</a>
+            <a href="about.html">About Us</a>
+            <a href="contact.html" class="active">Contact</a>
+            <a href="privacy.html">Privacy Policy</a>
+            <a href="terms.html">Terms of Service</a>
+        </nav>
+    </header>
+
+    <div class="container">
+        <section class="content-section">
+            <h1>Get In Touch</h1>
+            <p style="text-align: center; max-width: 700px; margin-left: auto; margin-right: auto;">
+                Have a question, a game suggestion, or just want to say hi? We'd love to hear from you! Fill out the form below or use our contact details to reach out.
+            </p>
+        </section>
+
+        <section class="content-section">
+            <div class="contact-grid">
+                <div class="contact-info">
+                    <h2>Contact Information</h2>
+                    <div class="contact-info-item">
+                        <i class="fas fa-map-marker-alt"></i>
+                        <p>NO: 7057, TNHB, Ayapakkam,<br>Chennai, Tamil Nadu 600077, India</p>
+                    </div>
+                    <div class="contact-info-item">
+                        <i class="fas fa-envelope"></i>
+                        <p><a href="mailto:mrmighty7057@gmail.com">mrmighty7057@gmail.com</a></p>
+                    </div>
+                    <div class="contact-info-item">
+                        <i class="fas fa-phone-alt"></i>
+                        <p><a href="tel:+918939705717">+91 89397 05717</a></p>
+                    </div>
+                </div>
+                
+                <div class="contact-form-container">
+                    <h2>Send Us a Message</h2>
+                    <form id="contactForm">
+                        <div class="form-group">
+                            <label for="name">Name</label>
+                            <input type="text" id="name" name="name" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="email">Email</label>
+                            <input type="email" id="email" name="email" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="message">Message</label>
+                            <textarea id="message" name="message" required></textarea>
+                        </div>
+                        <button type="submit" class="submit-btn">Send Message</button>
+                    </form>
+                </div>
+            </div>
+        </section>
+    </div>
+
+    <footer>
+        <div class="footer-links">
+            <a href="privacy.html">Privacy Policy</a>
+            <a href="terms.html">Terms of Service</a>
+            <a href="contact.html">Contact</a>
+            <a href="about.html">About Us</a>
+        </div>
+        <div class="social-links-footer">
+            <a href="#" target="_blank" rel="noopener noreferrer" aria-label="Our Twitter Profile"><i class="fab fa-twitter"></i></a>
+            <a href="#" target="_blank" rel="noopener noreferrer" aria-label="Our Facebook Profile"><i class="fab fa-facebook"></i></a>
+            <a href="#" target="_blank" rel="noopener noreferrer" aria-label="Our Instagram Profile"><i class="fab fa-instagram"></i></a>
+        </div>
+        <div class="copyright">© 2025 90's Game Hub. All rights reserved. All games are property of their respective owners.</div>
+    </footer>
+
+    <button class="scroll-top" aria-label="Scroll to top">
+        <i class="fas fa-arrow-up"></i>
+    </button>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            // Scroll to top button functionality
+            const scrollTopBtn = document.querySelector('.scroll-top');
+            
+            window.addEventListener('scroll', function() {
+                if (window.pageYOffset > 300) {
+                    scrollTopBtn.classList.add('visible');
+                } else {
+                    scrollTopBtn.classList.remove('visible');
+                }
+            });
+            
+            scrollTopBtn.addEventListener('click', function() {
+                window.scrollTo({
+                    top: 0,
+                    behavior: 'smooth'
+                });
+            });
+            
+            // Intersection Observer for animations on scroll
+            const observer = new IntersectionObserver((entries, obs) => {
+                entries.forEach(entry => {
+                    if (entry.isIntersecting) {
+                        entry.target.style.animationPlayState = 'running';
+                        obs.unobserve(entry.target);
+                    }
+                });
+            }, {
+                threshold: 0.1
+            });
+
+            const elementsToAnimate = document.querySelectorAll('.content-section');
+            elementsToAnimate.forEach(element => {
+                observer.observe(element);
+            });
+
+            // Note: Add your form submission logic here (e.g., using Fetch API to send data to a server)
+            document.getElementById('contactForm').addEventListener('submit', function(e) {
+                e.preventDefault();
+                // Example: alert('Form submitted! (This is a placeholder)');
+                // In a real application, you would send the form data to a server.
+            });
+        });
+    </script>
+</body>
+</html>

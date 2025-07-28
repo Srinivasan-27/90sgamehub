@@ -1,0 +1,437 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <title>Rabbit Run Game</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    <style>
+        :root {
+            --accent-color: #e94560; --accent-shadow: rgba(233, 69, 96, 0.5); --text-color: #f8f1f1;
+            --secondary-text: #b8b8b8; --dark-bg: #1a1a2e; --darker-bg: #16213e;
+            --darkest-bg: #0f3460; --ground-color: #1b5e20; --button-hover: #ff576d;
+            --rabbit-main: #f0f0f0; --rabbit-shadow: #dcdcdc; --rabbit-ear-inner: #f7d7d7;
+        }
+        * { box-sizing: border-box; user-select: none; }
+        body {
+            margin: 0; padding: 0; background-color: var(--dark-bg); font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            height: 100vh; display: flex; flex-direction: column; align-items: center; justify-content: center; overflow: hidden;
+        }
+        .game-title {
+            color: var(--text-color); text-align: center; margin-bottom: 10px; font-size: clamp(24px, 5vw, 48px);
+            text-transform: uppercase; letter-spacing: 3px; animation: glow 2s ease-in-out infinite alternate;
+            text-shadow: 0 0 10px var(--accent-shadow), 0 0 20px var(--accent-shadow), 0 0 30px var(--accent-shadow);
+        }
+        .game-title span { color: var(--accent-color); font-weight: bold; }
+        @keyframes glow {
+            from { text-shadow: 0 0 5px var(--accent-shadow), 0 0 10px var(--accent-shadow); }
+            to { text-shadow: 0 0 10px var(--accent-shadow), 0 0 20px var(--accent-shadow), 0 0 30px var(--accent-color); }
+        }
+        #gameContainer {
+            position: relative; width: 95vw; height: 60vh; max-width: 1200px; max-height: 700px;
+            min-width: 300px; min-height: 300px; margin: 20px auto;
+            background: linear-gradient(to bottom, var(--darker-bg), var(--darkest-bg));
+            border: 4px solid var(--accent-color); border-radius: 15px; overflow: hidden;
+            box-shadow: 0 0 30px var(--accent-shadow); transition: background 5s linear;
+        }
+        
+        /* --- NEW ENHANCED RABBIT STYLES --- */
+        #rabbit {
+            position: absolute; width: 6%; min-width: 50px; max-width: 75px;
+            height: auto; aspect-ratio: 1/1; bottom: 0; left: 10%; z-index: 10;
+            filter: drop-shadow(0 0 5px rgba(255, 255, 255, 0.5));
+        }
+        .rabbit-body {
+            position: absolute; width: 55%; height: 60%; left: 22%; bottom: 20%;
+            background: var(--rabbit-main); border-radius: 50% 50% 40% 40%;
+            box-shadow: inset 0 -5px var(--rabbit-shadow); transition: all 0.15s ease-out;
+        }
+        .rabbit-belly {
+            position: absolute; width: 80%; height: 70%; left: 10%; bottom: -5%;
+            background: white; border-radius: 50%; opacity: 0.8;
+        }
+        .rabbit-head {
+            position: absolute; width: 45%; height: 45%; left: 45%; top: 0;
+            background: var(--rabbit-main); border-radius: 50%;
+            box-shadow: inset -3px -3px var(--rabbit-shadow); transition: all 0.15s ease-out;
+        }
+        .rabbit-ear {
+            position: absolute; width: 25%; height: 70%; top: -50%;
+            background: var(--rabbit-main); border-radius: 40% 40% 0 0;
+            transform-origin: bottom center; transition: transform 0.2s ease-out;
+        }
+        .rabbit-ear.left { left: 15%; transform: rotate(-20deg); }
+        .rabbit-ear.right { left: 60%; transform: rotate(10deg); }
+        .rabbit-ear-inner {
+            position: absolute; width: 60%; height: 70%; left: 20%; top: 15%;
+            background: var(--rabbit-ear-inner); border-radius: 50%;
+        }
+        .rabbit-eye {
+            position: absolute; width: 15%; height: 15%; top: 40%; left: 70%;
+            background: #2c2c2c; border-radius: 50%; border: 1px solid white;
+        }
+        .rabbit-nose {
+            position: absolute; width: 12%; height: 10%; top: 60%; left: 90%;
+            background: #ffc0cb; border-radius: 50%;
+        }
+        .rabbit-tail {
+            position: absolute; width: 25%; height: 25%; left: 0; bottom: 40%;
+            background: var(--rabbit-main); border-radius: 50%;
+            box-shadow: inset 2px -2px var(--rabbit-shadow);
+        }
+        .rabbit-leg {
+            position: absolute; width: 20%; height: 35%; bottom: 0;
+            background: var(--rabbit-main); border-radius: 10px 10px 50% 50%;
+            box-shadow: inset 0 -3px var(--rabbit-shadow); transform-origin: top center;
+        }
+        .rabbit-leg.front { left: 50%; }
+        .rabbit-leg.back { left: 20%; }
+
+        /* --- NEW ANIMATIONS --- */
+        @keyframes run-body { 50% { transform: translateY(-8%); } }
+        @keyframes run-tail { 50% { transform: translateY(-15%) rotate(-10deg); } }
+        @keyframes run-ears { 50% { transform: rotate(10deg); } }
+        @keyframes run-leg-front { 0%, 100% { transform: rotate(40deg); } 50% { transform: rotate(-40deg); } }
+        @keyframes run-leg-back { 0%, 100% { transform: rotate(-40deg); } 50% { transform: rotate(40deg); } }
+
+        #rabbit.running .rabbit-body { animation: run-body 0.4s ease-in-out infinite; }
+        #rabbit.running .rabbit-tail { animation: run-tail 0.4s ease-in-out infinite; }
+        #rabbit.running .rabbit-ear.left { animation: run-ears 0.4s ease-in-out infinite alternate; }
+        #rabbit.running .rabbit-ear.right { animation: run-ears 0.4s ease-in-out infinite alternate-reverse; }
+        #rabbit.running .rabbit-leg.front { animation: run-leg-front 0.4s linear infinite; }
+        #rabbit.running .rabbit-leg.back { animation: run-leg-back 0.4s linear infinite; }
+
+        #rabbit.jumping .rabbit-body { transform: rotate(15deg); }
+        #rabbit.jumping .rabbit-head { top: 15%; left: 40%; }
+        #rabbit.jumping .rabbit-leg { transform: rotate(-60deg); }
+        #rabbit.jumping .rabbit-ear { transform: rotate(-60deg) !important; }
+
+        #rabbit.crouching .rabbit-body { transform: scaleY(0.7) translateY(25%); }
+        #rabbit.crouching .rabbit-head { top: 30%; }
+        #rabbit.crouching .rabbit-ear { transform: rotate(-90deg) !important; top: -10%; }
+        #rabbit.crouching .rabbit-leg { transform: scaleY(0.6) translateY(30%); }
+        
+        /* --- Obstacles & Other Styles (largely unchanged) --- */
+        .obstacle { position: absolute; bottom: 0; z-index: 5; filter: drop-shadow(0 0 3px rgba(0,0,0,0.5)); }
+        .rock { width: 5%; min-width: 30px; max-width: 50px; height: auto; aspect-ratio: 1/1; background: linear-gradient(135deg, #5a5a5a, #3a3a3a); border-radius: 10px; border: 2px solid #333; }
+        .log { width: 7.5%; min-width: 45px; max-width: 70px; height: auto; aspect-ratio: 2/1; background: linear-gradient(135deg, #6d4c41, #4e342e); border-radius: 15px; border: 2px solid #3e2723; }
+        .bat { position: absolute; z-index: 10; width: 4%; min-width: 35px; max-width: 50px; aspect-ratio: 2/1; }
+        .bat-body { position: absolute; width: 40%; height: 40%; background-color: #333; border-radius: 50%; top: 30%; left: 30%; }
+        .bat-wing { position: absolute; width: 50%; height: 100%; background-color: #444; clip-path: polygon(50% 0, 100% 50%, 50% 100%, 0 50%); transform-origin: right center; animation: flap 0.2s linear infinite alternate; }
+        .bat-wing.left { left: 10%; transform-origin: right center; }
+        .bat-wing.right { right: 10%; transform-origin: left center; transform: scaleX(-1); }
+        @keyframes flap { from { transform: rotate(30deg) scaleX(1); } to { transform: rotate(-30deg) scaleX(1); } }
+        #ground { position: absolute; width: 100%; height: 5%; min-height: 15px; max-height: 30px; bottom: 0; background: linear-gradient(to right, var(--ground-color), #2e7d32); z-index: 5; border-top: 2px solid #4caf50; }
+        #score-container { position: absolute; top: 3%; right: 3%; font-size: clamp(16px, 2.5vw, 28px); color: var(--text-color); text-align: right; z-index: 20; background-color: rgba(0, 0, 0, 0.5); padding: 1% 2%; border-radius: 5px; border: 1px solid var(--accent-color); }
+        #high-score { font-size: clamp(12px, 1.5vw, 18px); color: var(--secondary-text); }
+        #gameOver, #startScreen { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); font-size: clamp(24px, 4vw, 42px); color: var(--accent-color); text-align: center; background-color: rgba(26, 26, 46, 0.95); padding: 3%; border-radius: 15px; z-index: 20; border: 3px solid var(--accent-color); width: 80%; max-width: 500px; box-shadow: 0 0 20px rgba(0,0,0,0.7); }
+        #gameOver { display: none; }
+        #startButton, #back-button { padding: 12px 25px; font-size: clamp(14px, 2vw, 20px); background: linear-gradient(to bottom, var(--accent-color), #d23352); color: white; border: none; border-radius: 5px; cursor: pointer; transition: all 0.3s; text-transform: uppercase; letter-spacing: 1px; font-weight: bold; text-decoration: none; display: inline-block; }
+        #startButton { margin-top: 20px; min-width: 120px; }
+        #startButton:hover, #back-button:hover { background: linear-gradient(to bottom, var(--button-hover), var(--accent-color)); transform: translateY(-2px); box-shadow: 0 5px 15px var(--accent-shadow); }
+        #back-button { position: absolute; top: 20px; left: 20px; z-index: 30; padding: 10px 15px; font-size: 16px; }
+        #instructions-container { position: absolute; top: 20px; left: 20px; z-index: 30; }
+        #instructions-toggle-button { background-color: var(--accent-color); color: white; border: none; border-radius: 50%; width: 40px; height: 40px; font-size: 20px; cursor: pointer; display: flex; align-items: center; justify-content: center; box-shadow: 0 2px 10px rgba(0,0,0,0.3); transition: all 0.3s; }
+        #instructions-toggle-button:hover { transform: scale(1.1); box-shadow: 0 4px 15px var(--accent-shadow); }
+        #instructions-panel { position: absolute; top: 50px; left: 0; width: 250px; background: rgba(26, 26, 46, 0.95); padding: 20px; border-radius: 10px; border: 2px solid var(--accent-color); color: var(--text-color); transition: opacity 0.3s, transform 0.3s; }
+        #instructions-panel.hidden { opacity: 0; transform: translateX(-20px); pointer-events: none; }
+        @media (max-width: 600px) { #instructions-container { top: 70px; } }
+    </style>
+</head>
+<body>
+    <a href="index.html" id="back-button"><i class="fas fa-arrow-left"></i> Back</a>
+    <div class="game-title">Rabbit <span>Run</span></div>
+    
+    <div id="gameContainer">
+        <div id="instructions-container">
+            <button id="instructions-toggle-button" title="Instructions">?</button>
+            <div id="instructions-panel" class="hidden">
+                <h3>How to Play</h3>
+                <ul>
+                    <li><b>Jump:</b> <b>Spacebar</b> or tap <b>top half</b> of screen.</li>
+                    <li><b>Crouch:</b> <b>Down Arrow</b> or tap <b>bottom half</b> of screen.</li>
+                    <li><b>Goal:</b> Dodge ground obstacles by jumping and flying ones by crouching!</li>
+                </ul>
+            </div>
+        </div>
+        <div id="rabbit">
+            <div class="rabbit-tail"></div>
+            <div class="rabbit-leg back"></div>
+            <div class="rabbit-body">
+                <div class="rabbit-belly"></div>
+            </div>
+            <div class="rabbit-leg front"></div>
+            <div class="rabbit-head">
+                <div class="rabbit-ear left"><div class="rabbit-ear-inner"></div></div>
+                <div class="rabbit-ear right"><div class="rabbit-ear-inner"></div></div>
+                <div class="rabbit-eye"></div>
+                <div class="rabbit-nose"></div>
+            </div>
+        </div>
+        <div id="ground"></div>
+        <div id="score-container">
+            <div id="score">0</div>
+            <div id="high-score">HI: 0</div>
+        </div>
+        <div id="gameOver">GAME OVER<br>
+            <div id="final-score">Score: 0</div>
+            <span>Press Spacebar to Restart</span>
+        </div>
+        <div id="startScreen">
+            <h2>Rabbit Run</h2>
+            <p>Jump & Crouch to Survive!</p>
+            <button id="startButton">Start Game</button>
+        </div>
+    </div>
+
+    <script>
+        // Game elements
+        const rabbit = document.getElementById('rabbit');
+        const gameContainer = document.getElementById('gameContainer');
+        const scoreElement = document.getElementById('score');
+        const highScoreElement = document.getElementById('high-score');
+        const finalScoreElement = document.getElementById('final-score');
+        const gameOverElement = document.getElementById('gameOver');
+        const startScreen = document.getElementById('startScreen');
+        const startButton = document.getElementById('startButton');
+        const instructionsToggleButton = document.getElementById('instructions-toggle-button');
+        const instructionsPanel = document.getElementById('instructions-panel');
+        
+        // Game variables
+        let isJumping = false, isGameOver = false, isGameStarted = false, isCrouching = false;
+        let score = 0, distance = 0, speed = 8;
+        let highScore = localStorage.getItem('rabbitRunHighScore') || 0;
+        let gravity = 0.7, jumpVelocity = 14;
+        let obstacles = [], clouds = [], mountains = [];
+        let animationId, obstacleTimer, cloudTimer, mountainTimer, scoreTimer, dayNightTimer;
+        
+        highScoreElement.textContent = `HI: ${highScore}`;
+        
+        // Event listeners
+        document.addEventListener('keydown', handleKeyDown);
+        document.addEventListener('keyup', handleKeyUp);
+        gameContainer.addEventListener('touchstart', handleTouchStart, { passive: false });
+        gameContainer.addEventListener('touchend', handleTouchEnd, { passive: false });
+
+        startButton.addEventListener('click', startGame);
+        instructionsToggleButton.addEventListener('click', (e) => {
+            e.stopPropagation();
+            instructionsPanel.classList.toggle('hidden');
+        });
+
+        function handleKeyDown(event) {
+            const key = event.code;
+            if (!isGameStarted && (key === 'Space' || key === 'ArrowUp')) { startGame(); return; }
+            if (isGameOver && key === 'Space') { restartGame(); return; }
+            if (!isGameStarted || isGameOver) return;
+            
+            if ((key === 'Space' || key === 'ArrowUp') && !isJumping && !isCrouching) jump();
+            if (key === 'ArrowDown' && !isJumping && !isCrouching) crouch();
+        }
+
+        function handleKeyUp(event) {
+            if (event.code === 'ArrowDown' && isCrouching) uncrouch();
+        }
+
+        function handleTouchStart(event) {
+            event.preventDefault();
+            if (!isGameStarted) { startGame(); return; }
+            if (isGameOver) { restartGame(); return; }
+
+            const touchY = event.touches[0].clientY;
+            const containerRect = gameContainer.getBoundingClientRect();
+            const midpoint = containerRect.top + (containerRect.height / 2);
+
+            if (touchY < midpoint) { // Tap top half
+                if (!isJumping && !isCrouching) jump();
+            } else { // Tap bottom half
+                if (!isJumping && !isCrouching) crouch();
+            }
+        }
+
+        function handleTouchEnd(event) {
+            event.preventDefault();
+            if (isCrouching) uncrouch();
+        }
+
+        function crouch() {
+            isCrouching = true;
+            rabbit.classList.remove('running', 'jumping');
+            rabbit.classList.add('crouching');
+        }
+
+        function uncrouch() {
+            isCrouching = false;
+            rabbit.classList.remove('crouching');
+            if (!isJumping) rabbit.classList.add('running');
+        }
+        
+        function startGame() {
+            isGameStarted = true; isGameOver = false; isCrouching = false;
+            score = 0; distance = 0; speed = 8;
+            startScreen.style.display = 'none';
+            gameOverElement.style.display = 'none';
+            
+            [obstacles, clouds, mountains].forEach(arr => {
+                arr.forEach(item => item.element.remove());
+                arr.length = 0;
+            });
+            
+            rabbit.style.bottom = '0px';
+            rabbit.classList.add('running');
+            rabbit.classList.remove('crouching', 'jumping');
+            
+            createMountain(); createCloud();
+            
+            obstacleTimer = setInterval(createObstacle, 1800);
+            cloudTimer = setInterval(createCloud, 3000);
+            mountainTimer = setInterval(createMountain, 5000);
+            scoreTimer = setInterval(updateScore, 100);
+            dayNightTimer = setInterval(toggleDayNight, 30000);
+            animationId = requestAnimationFrame(updateGame);
+        }
+        
+        function restartGame() {
+            cancelAnimationFrame(animationId);
+            [obstacleTimer, cloudTimer, mountainTimer, scoreTimer, dayNightTimer].forEach(clearInterval);
+            startGame();
+        }
+        
+        function jump() {
+            if (isJumping) return;
+            isJumping = true;
+            jumpVelocity = 14;
+            rabbit.classList.remove('running');
+            rabbit.classList.add('jumping');
+        }
+        
+        function updateGame() {
+            if (isGameOver) return;
+            distance += speed / 10;
+            
+            if (isJumping) {
+                let currentBottom = parseFloat(rabbit.style.bottom) || 0;
+                currentBottom += jumpVelocity;
+                jumpVelocity -= gravity;
+                
+                if (currentBottom <= 0) {
+                    currentBottom = 0;
+                    isJumping = false;
+                    rabbit.classList.remove('jumping');
+                    if (!isCrouching) rabbit.classList.add('running');
+                }
+                rabbit.style.bottom = currentBottom + 'px';
+            }
+            
+            updateMovingElements(obstacles, speed);
+            updateMovingElements(clouds, speed / 3);
+            updateMovingElements(mountains, speed / 5);
+            checkCollisions();
+            animationId = requestAnimationFrame(updateGame);
+        }
+
+        function updateMovingElements(elements, currentSpeed) {
+            elements.forEach((item, index) => {
+                let newLeft = (parseFloat(item.element.style.left) || 0) - currentSpeed;
+                if (newLeft < -item.width) {
+                    item.element.remove();
+                    elements.splice(index, 1);
+                } else {
+                    item.element.style.left = newLeft + 'px';
+                }
+            });
+        }
+
+        // --- FIXED COLLISION LOGIC ---
+        function checkCollisions() {
+            const rabbitRect = rabbit.getBoundingClientRect();
+            
+            for (const obstacle of obstacles) {
+                const obstacleRect = obstacle.element.getBoundingClientRect();
+
+                // Define hitboxes with slight adjustments for better feel
+                const rabbitHitbox = {
+                    left: rabbitRect.left + rabbitRect.width * 0.2,
+                    right: rabbitRect.right - rabbitRect.width * 0.2,
+                    top: isCrouching ? rabbitRect.top + rabbitRect.height * 0.5 : rabbitRect.top,
+                    bottom: rabbitRect.bottom
+                };
+
+                const obstacleHitbox = {
+                    left: obstacleRect.left + 5,
+                    right: obstacleRect.right - 5,
+                    top: obstacleRect.top + 5,
+                    bottom: obstacleRect.bottom - 5,
+                };
+                
+                if (
+                    rabbitHitbox.right > obstacleHitbox.left &&
+                    rabbitHitbox.left < obstacleHitbox.right &&
+                    rabbitHitbox.bottom > obstacleHitbox.top &&
+                    rabbitHitbox.top < obstacleHitbox.bottom
+                ) {
+                    gameOver();
+                    return; // Exit loop once collision is detected
+                }
+            }
+        }
+        
+        function createObstacle() {
+            if (isGameOver) return;
+            if (score > 500 && Math.random() < 0.3) {
+                createFlyingEnemy();
+            } else {
+                createGroundObstacle();
+            }
+        }
+
+        function createGroundObstacle() {
+            const type = Math.random() < 0.6 ? 'rock' : 'log';
+            const el = document.createElement('div');
+            el.className = `obstacle ${type}`;
+            const width = type === 'rock' ? (30 + Math.random() * 20) : (45 + Math.random() * 25);
+            el.style.width = `${width}px`;
+            el.style.left = `${gameContainer.offsetWidth}px`;
+            gameContainer.appendChild(el);
+            obstacles.push({ element: el, width: width, type: 'ground' });
+        }
+
+        function createFlyingEnemy() {
+            const el = document.createElement('div');
+            el.className = 'bat';
+            el.innerHTML = `<div class="bat-body"></div><div class="bat-wing left"></div><div class="bat-wing right"></div>`;
+            el.style.top = Math.random() < 0.5 ? '40%' : '60%';
+            el.style.left = `${gameContainer.offsetWidth}px`;
+            gameContainer.appendChild(el);
+            obstacles.push({ element: el, width: 50, type: 'flying' });
+        }
+        
+        function updateScore() {
+            if (isGameOver) return;
+            score = Math.floor(distance / 10);
+            scoreElement.textContent = score;
+            if (score > 0 && score % 100 === 0) speed += 0.2;
+        }
+        
+        function gameOver() {
+            if(isGameOver) return;
+            isGameOver = true;
+            rabbit.classList.remove('running', 'crouching', 'jumping');
+            finalScoreElement.textContent = `Score: ${score}`;
+            if (score > highScore) {
+                highScore = score;
+                highScoreElement.textContent = `HI: ${highScore}`;
+                localStorage.setItem('rabbitRunHighScore', highScore);
+            }
+            gameOverElement.style.display = 'block';
+            cancelAnimationFrame(animationId);
+            [obstacleTimer, cloudTimer, mountainTimer, scoreTimer, dayNightTimer].forEach(clearInterval);
+        }
+
+        // Placeholder/Unchanged utility functions
+        function toggleDayNight() { /* Logic for day/night can be added here */ }
+        function createCloud() { if (isGameOver) return; const el = document.createElement('div'); el.className = 'cloud'; const size = 30 + Math.random() * 40; el.style.width = `${size * 2}px`; el.style.height = `${size}px`; el.style.top = `${20 + Math.random() * 100}px`; el.style.left = `${gameContainer.offsetWidth}px`; gameContainer.appendChild(el); clouds.push({ element: el, width: size * 2 }); }
+        function createMountain() { if (isGameOver) return; const el = document.createElement('div'); el.className = 'mountain'; const width = 150 + Math.random() * 100; const height = 50 + Math.random() * 80; el.style.width = `${width}px`; el.style.height = `${height}px`; el.style.left = `${gameContainer.offsetWidth}px`; gameContainer.appendChild(el); mountains.push({ element: el, width: width }); }
+    </script>
+</body>
+</html>

@@ -1,0 +1,447 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <title>Word Puzzle Finder</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.1.1/css/all.min.css">
+    <style>
+        :root {
+            --primary-light: #8f94fb;
+            --primary-dark: #4e54c8;
+            --hint-light: #f46b45;
+            --hint-dark: #eea849;
+            --solve-light: #11998e;
+            --solve-dark: #38ef7d;
+            --word-list-light: #6a11cb;
+            --word-list-dark: #2575fc;
+        }
+
+        /* General Body and Page Styles */
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #1a2a6c, #b21f1f, #fdbb2d);
+            margin: 0;
+            padding: 15px 0;
+            color: #333;
+            min-height: 100vh;
+            overflow-x: hidden; /* Allow vertical scroll if needed, prevent horizontal */
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        .page-header {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 15px 20px;
+            position: relative;
+            width: 100%;
+        }
+
+        h1 {
+            color: white;
+            text-align: center;
+            margin: 0;
+            font-size: 2.5rem;
+            text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.5);
+        }
+
+        /* Page Controls (Back, Instructions) */
+        .page-controls {
+            position: absolute;
+            top: 50%;
+            left: 20px;
+            transform: translateY(-50%);
+            display: flex;
+            gap: 10px;
+        }
+
+        .page-btn {
+            background-color: rgba(255, 255, 255, 0.1);
+            color: white;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            backdrop-filter: blur(5px);
+            padding: 10px 15px;
+            border-radius: 50px;
+            text-decoration: none;
+            font-size: 1rem;
+            transition: all 0.3s ease;
+            cursor: pointer;
+            font-family: 'Segoe UI', sans-serif;
+        }
+        .page-btn:hover {
+            background-color: rgba(255, 255, 255, 0.2);
+            transform: translateY(-2px);
+        }
+
+        /* Instructions Panel */
+        #instructions-panel {
+            position: fixed;
+            top: 0;
+            left: 0;
+            height: 100%;
+            width: 300px;
+            background-color: rgba(30, 30, 50, 0.95);
+            color: white;
+            border-right: 2px solid var(--primary-light);
+            box-shadow: 5px 0 15px rgba(0,0,0,0.5);
+            padding: 20px;
+            transform: translateX(-100%);
+            transition: transform 0.4s ease-in-out;
+            z-index: 1000;
+            backdrop-filter: blur(10px);
+        }
+        #instructions-panel.visible {
+            transform: translateX(0);
+        }
+        .close-btn {
+            position: absolute;
+            top: 10px;
+            right: 15px;
+            background: none;
+            border: none;
+            color: white;
+            font-size: 2.5rem;
+            font-weight: 300;
+            cursor: pointer;
+            padding: 0;
+            line-height: 1;
+            transition: color 0.3s ease, transform 0.3s ease;
+        }
+        .close-btn:hover {
+            color: var(--primary-light);
+            transform: rotate(90deg);
+        }
+        #instructions-panel h3 {
+            color: var(--primary-light);
+            border-bottom: 1px solid var(--primary-light);
+            padding-bottom: 10px;
+            margin-top: 40px;
+            margin-bottom: 15px;
+        }
+        #instructions-panel ul { list-style-type: none; padding: 0; }
+        #instructions-panel li { margin-bottom: 10px; line-height: 1.5; }
+        
+        /* Overlay for modal/panel backgrounds */
+        .overlay {
+            display: none;
+            position: fixed;
+            top: 0; left: 0;
+            width: 100%; height: 100%;
+            background-color: rgba(0, 0, 0, 0.6);
+            z-index: 999;
+        }
+
+        /* Main Game Container */
+        .game-container {
+            background-color: rgba(255, 255, 255, 0.9);
+            border-radius: 15px;
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.3);
+            padding: 25px;
+            width: 95%;
+            max-width: 1000px;
+            margin: 0 auto;
+            backdrop-filter: blur(5px);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+        }
+        
+        .game-area-wrapper {
+            display: flex;
+            justify-content: center;
+            align-items: flex-start;
+            gap: 25px;
+            margin-bottom: 25px;
+        }
+
+        /* Game Controls */
+        .controls {
+            display: flex;
+            justify-content: center;
+            gap: 15px;
+            flex-wrap: wrap;
+        }
+
+        button {
+            background: linear-gradient(to right, var(--primary-dark), var(--primary-light));
+            color: white;
+            border: none;
+            padding: 12px 20px;
+            border-radius: 50px;
+            cursor: pointer;
+            font-size: 1rem;
+            font-weight: bold;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+            min-width: 120px;
+        }
+        button:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 6px 12px rgba(0, 0, 0, 0.3);
+        }
+        button:disabled {
+            background: #999;
+            cursor: not-allowed;
+            transform: none;
+            box-shadow: none;
+        }
+        #hint-btn { background: linear-gradient(to right, var(--hint-light), var(--hint-dark)); }
+        #solve-btn { background: linear-gradient(to right, var(--solve-light), var(--solve-dark)); }
+
+        /* Word List */
+        .word-list {
+            display: flex; flex-wrap: wrap; gap: 10px;
+            margin-bottom: 20px; justify-content: center;
+            max-height: 110px; /* Give a max height for scrolling */
+            overflow-y: auto;
+            padding: 5px;
+        }
+        .word-item {
+            background: linear-gradient(to right, var(--word-list-light), var(--word-list-dark));
+            color: white; padding: 8px 15px; border-radius: 50px;
+            font-weight: bold; box-shadow: 0 3px 6px rgba(0, 0, 0, 0.1);
+            transition: all 0.3s ease;
+        }
+        .word-item.found {
+            background: linear-gradient(to right, var(--solve-light), var(--solve-dark));
+            text-decoration: line-through;
+            opacity: 0.8; transform: scale(0.95);
+        }
+
+        /* Puzzle Grid */
+        .puzzle-section {
+            flex-grow: 1;
+            min-width: 280px; /* Minimum width for the puzzle area */
+        }
+        .puzzle-grid {
+            display: grid; gap: 3px; margin: 0 auto;
+            background-color: rgba(0, 0, 0, 0.1); padding: 10px;
+            border-radius: 10px; box-shadow: inset 0 0 10px rgba(0, 0, 0, 0.1);
+            touch-action: none; /* Prevent default touch actions */
+        }
+        .puzzle-grid.shake { animation: shake 0.5s; }
+
+        .cell {
+            /* Width, height, and font-size are now set by JavaScript */
+            display: flex;
+            align-items: center; justify-content: center;
+            background-color: white; font-weight: bold;
+            cursor: pointer; user-select: none;
+            transition: all 0.2s; border-radius: 5px;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+        }
+        .cell:hover { transform: scale(1.05); z-index: 1; }
+        .cell.selected {
+            background: linear-gradient(to right, var(--primary-dark), var(--primary-light));
+            color: white; transform: scale(1.1);
+        }
+        .cell.highlighted {
+            background: linear-gradient(to right, var(--solve-light), var(--solve-dark));
+            color: white; animation: pulse 1.5s infinite;
+        }
+        .cell.hinted {
+            background: linear-gradient(to right, var(--hint-light), var(--hint-dark));
+            color: white; border-radius: 50%;
+        }
+
+        /* Animations */
+        @keyframes pulse { 0% { transform: scale(1); } 50% { transform: scale(1.1); } 100% { transform: scale(1); } }
+        @keyframes shake {
+            0%, 100% { transform: translateX(0); }
+            10%, 30%, 50%, 70%, 90% { transform: translateX(-5px); }
+            20%, 40%, 60%, 80% { transform: translateX(5px); }
+        }
+
+        /* Stats Section */
+        .stats {
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+            flex-basis: 180px;
+            flex-shrink: 0;
+        }
+        .stat-box {
+            background: rgba(255, 255, 255, 0.9); padding: 15px;
+            border-radius: 10px; box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+            text-align: center; width: 100%;
+            transition: all 0.3s ease;
+        }
+        .stat-box:hover { transform: translateY(-5px); box-shadow: 0 8px 20px rgba(0, 0, 0, 0.15); }
+        .stat-value { font-size: 2rem; font-weight: bold; color: var(--primary-dark); margin-bottom: 5px; }
+        .stat-label { font-size: 0.9rem; color: #666; text-transform: uppercase; letter-spacing: 1px; }
+
+        /* Win Modal */
+        #win-modal {
+            display: none; position: fixed; top: 0; left: 0;
+            width: 100%; height: 100%;
+            align-items: center; justify-content: center; z-index: 2000;
+        }
+        .win-modal-content {
+            background: white; padding: 40px; border-radius: 15px;
+            text-align: center; box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+            animation: fadeIn 0.5s;
+        }
+        .win-modal-content h2 { color: var(--primary-dark); font-size: 2.5rem; margin-bottom: 15px;}
+        .win-modal-content p { font-size: 1.2rem; margin-bottom: 30px; }
+        @keyframes fadeIn { from { opacity: 0; transform: scale(0.8); } to { opacity: 1; transform: scale(1); } }
+
+        /* Responsive adjustments */
+        @media (max-width: 850px) {
+            .game-area-wrapper {
+                flex-direction: column;
+                align-items: center;
+            }
+            .stats {
+                flex-direction: row;
+                flex-wrap: wrap;
+                justify-content: center;
+                width: 100%;
+                flex-basis: auto;
+            }
+            .stat-box {
+                flex: 1;
+                min-width: 120px;
+            }
+        }
+        @media (max-width: 480px) {
+            #instructions-panel { width: calc(100% - 40px); }
+            .controls { flex-direction: column; align-items: center; }
+            button { width: 80%; }
+        }
+    </style>
+</head>
+<body>
+    <div class="overlay" id="instructions-overlay"></div>
+    <div class="page-header">
+        <div class="page-controls">
+            <a href="/" class="page-btn"><i class="fas fa-arrow-left"></i> Back to Hub</a>
+            <button id="instructions-btn-toggle" class="page-btn"><i class="fas fa-info-circle"></i> Instructions</button>
+        </div>
+        <h1>Word Puzzle Finder</h1>
+    </div>
+    
+    <div id="instructions-panel">
+        <button id="close-instructions-btn" class="close-btn">&times;</button>
+        <h3>How to Play</h3>
+        <ul>
+            <li>Find the words from the list in the grid.</li>
+            <li>Words can be hidden horizontally, vertically, or diagonally in any of the 8 directions.</li>
+            <li>Click and drag (or tap and drag) on the grid to select letters and form a word.</li>
+            <li>Found words will be highlighted in the grid and crossed off the list.</li>
+            <li>Use the "Hint" button if you're stuck! It will reveal the first letter of a random unfound word.</li>
+        </ul>
+    </div>
+    
+    <div class="game-container">
+        <div class="game-area-wrapper">
+            <div class="puzzle-section">
+                <div class="word-list" id="word-list"></div>
+                <div class="puzzle-grid" id="puzzle-grid"></div>
+            </div>
+            <div class="stats">
+                <div class="stat-box">
+                    <div class="stat-value" id="found-count">0</div>
+                    <div class="stat-label">Words Found</div>
+                </div>
+                <div class="stat-box">
+                    <div class="stat-value" id="total-count">0</div>
+                    <div class="stat-label">Total Words</div>
+                </div>
+                <div class="stat-box">
+                    <div class="stat-value" id="hints-left">3</div>
+                    <div class="stat-label">Hints Left</div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="controls">
+            <button id="new-game-btn">New Game</button>
+            <button id="hint-btn">Hint</button>
+            <button id="solve-btn">Solve Puzzle</button>
+        </div>
+    </div>
+    
+    <div id="win-modal" class="overlay">
+        <div class="win-modal-content">
+            <h2>Congratulations!</h2>
+            <p>You found all the words!</p>
+            <button id="play-again-btn">Play Again</button>
+        </div>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            const config={gridSize:15,wordCount:12,hints:3};let gameState={};const puzzleGrid=document.getElementById("puzzle-grid"),wordList=document.getElementById("word-list"),newGameBtn=document.getElementById("new-game-btn"),hintBtn=document.getElementById("hint-btn"),solveBtn=document.getElementById("solve-btn"),foundCountEl=document.getElementById("found-count"),totalCountEl=document.getElementById("total-count"),hintsLeftEl=document.getElementById("hints-left"),instructionsPanel=document.getElementById("instructions-panel"),instructionsBtnToggle=document.getElementById("instructions-btn-toggle"),closeInstructionsBtn=document.getElementById("close-instructions-btn"),instructionsOverlay=document.getElementById("instructions-overlay"),winModal=document.getElementById("win-modal"),playAgainBtn=document.getElementById("play-again-btn");let isDragging=!1,lastTouchedCell=null;const wordBank=["APPLE","BANANA","CHERRY","ORANGE","GRAPE","LEMON","MANGO","PEACH","PLUM","KIWI","MELON","COCONUT","PAPAYA","GUAVA","JAVA","PYTHON","HTML","CSS","JAVASCRIPT","REACT","ANGULAR","VUE","NODE","EXPRESS","MONGO","DOCKER","GITHUB","AZURE","PLANET","GALAXY","NEBULA","COMET","ASTEROID","STAR","SUN","MOON","EARTH","MARS","JUPITER","SATURN","OCEAN","RIVER","MOUNTAIN","FOREST","DESERT","ISLAND","VOLCANO","CANYON","WINTER","SPRING","SUMMER","AUTUMN"];
+            
+            function debounce(func, wait) {
+                let timeout;
+                return function executedFunction(...args) {
+                    const later = () => {
+                        clearTimeout(timeout);
+                        func(...args);
+                    };
+                    clearTimeout(timeout);
+                    timeout = setTimeout(later, wait);
+                };
+            }
+
+            function resizeGrid() {
+                const gridContainer = document.getElementById('puzzle-grid');
+                const containerWidth = gridContainer.clientWidth;
+                const totalGap = 3 * (config.gridSize - 1);
+                const totalPadding = 2 * 10;
+                const newCellSize = Math.floor((containerWidth - totalGap - totalPadding) / config.gridSize);
+                const finalCellSize = Math.min(newCellSize, 40); // Max size of 40px
+
+                let customStyles = document.getElementById('grid-styles');
+                if (!customStyles) {
+                    customStyles = document.createElement('style');
+                    customStyles.id = 'grid-styles';
+                    document.head.appendChild(customStyles);
+                }
+                customStyles.innerHTML = `
+                    .cell {
+                        width: ${finalCellSize}px;
+                        height: ${finalCellSize}px;
+                        font-size: ${Math.max(12, Math.floor(finalCellSize * 0.5))}px;
+                    }
+                `;
+            }
+
+            function initGame(){gameState={grid:[],words:[],wordLocations:{},foundWords:[],selectedCells:[],hintsUsed:0,hintActive:!1},winModal.style.display="none",toggleInstructions(!0),generateWordList(),createEmptyGrid(),placeWords()?(fillEmptyCells(),renderGrid(),renderWordList(),updateStats(),resizeGrid()):(console.error("Failed to place all words, trying a new game setup."),initGame())}
+            function generateWordList(){const e=[...wordBank].sort(()=>.5-Math.random());gameState.words=e.slice(0,config.wordCount).map(e=>e.toUpperCase())}
+            function createEmptyGrid(){gameState.grid=Array(config.gridSize).fill().map(()=>Array(config.gridSize).fill(""))}
+            function placeWords(){const e=[{dr:0,dc:1},{dr:1,dc:0},{dr:1,dc:1},{dr:1,dc:-1},{dr:0,dc:-1},{dr:-1,dc:0},{dr:-1,dc:-1},{dr:-1,dc:1}];for(const t of gameState.words){let s=!1,a=0,d=100;for(;!s&&a<d;){a++;const d=e[Math.floor(Math.random()*e.length)];let o=Math.floor(Math.random()*config.gridSize),n=Math.floor(Math.random()*config.gridSize);const r=o+d.dr*(t.length-1),l=n+d.dc*(t.length-1);if(r<0||r>=config.gridSize||l<0||l>=config.gridSize)continue;let i=!0;const c=[];for(let e=0;e<t.length;e++){const s=o+e*d.dr,a=n+e*d.dc,r=gameState.grid[s][a];if(""!==r&&r!==t[e]){i=!1;break}c.push({row:s,col:a})}if(i){for(let e=0;e<t.length;e++)gameState.grid[c[e].row][c[e].col]=t[e];gameState.wordLocations[t]=c,s=!0}}if(!s)return!1}return!0}
+            function fillEmptyCells(){const e="ABCDEFGHIJKLMNOPQRSTUVWXYZ";for(let t=0;t<config.gridSize;t++)for(let s=0;s<config.gridSize;s++)""===gameState.grid[t][s]&&(gameState.grid[t][s]=e[Math.floor(Math.random()*e.length)])}
+            function renderGrid(){puzzleGrid.innerHTML="",puzzleGrid.style.gridTemplateColumns=`repeat(${config.gridSize}, 1fr)`;for(let e=0;e<config.gridSize;e++)for(let t=0;t<config.gridSize;t++){const s=document.createElement("div");s.className="cell",s.textContent=gameState.grid[e][t],s.dataset.row=e,s.dataset.col=t,puzzleGrid.appendChild(s)}}
+            function renderWordList(){wordList.innerHTML="",gameState.words.sort().forEach(e=>{const t=document.createElement("div");t.className="word-item",t.textContent=e,gameState.foundWords.includes(e)&&t.classList.add("found"),wordList.appendChild(t)})}
+            function updateStats(){foundCountEl.textContent=gameState.foundWords.length,totalCountEl.textContent=gameState.words.length;const e=config.hints-gameState.hintsUsed;hintsLeftEl.textContent=e,hintBtn.disabled=e<=0||gameState.foundWords.length===gameState.words.length}
+            function startSelection(e,t){gameState.hintActive||(isDragging=!0,gameState.selectedCells=[{row:e,col:t}],document.querySelector(`.cell[data-row="${e}"][data-col="${t}"]`).classList.add("selected"))}
+            function updateSelection(e,t){if(!isDragging||0===gameState.selectedCells.length)return;document.querySelectorAll(".cell.selected").forEach(e=>e.classList.remove("selected"));const s=gameState.selectedCells[0],a=e-s.row,d=t-s.col;let o=0,n=0;Math.abs(a)>Math.abs(d)?(o=Math.sign(a),n=0):Math.abs(d)>Math.abs(a)?(n=Math.sign(d),o=0):(o=Math.sign(a),n=Math.sign(d));const r=Math.max(Math.abs(e-s.row),Math.abs(t-s.col));gameState.selectedCells=[];for(let e=0;e<=r;e++){const t=s.row+e*o,a=s.col+e*n;t>=0&&t<config.gridSize&&a>=0&&a<config.gridSize&&(gameState.selectedCells.push({row:t,col:a}),document.querySelector(`.cell[data-row="${t}"][data-col="${a}"]`).classList.add("selected"))}}
+            function endSelection(){if(!isDragging)return;if(isDragging=!1,gameState.selectedCells.length<2)return document.querySelectorAll(".cell.selected").forEach(e=>e.classList.remove("selected")),void(gameState.selectedCells=[]);let e="";gameState.selectedCells.forEach(t=>{e+=gameState.grid[t.row][t.col]});const t=e.split("").reverse().join(""),s=gameState.words.includes(e)&&!gameState.foundWords.includes(e)?e:gameState.words.includes(t)&&!gameState.foundWords.includes(t)?t:null;s?(s===t&&gameState.selectedCells.reverse(),gameState.foundWords.push(s),gameState.selectedCells.forEach(e=>{const t=document.querySelector(`.cell[data-row="${e.row}"][data-col="${e.col}"]`);t.classList.remove("selected"),t.classList.add("highlighted")}),renderWordList(),updateStats(),gameState.foundWords.length===gameState.words.length&&setTimeout(()=>{winModal.style.display="flex"},500)):(document.querySelectorAll(".cell.selected").forEach(e=>e.classList.remove("selected")),puzzleGrid.classList.add("shake"),setTimeout(()=>puzzleGrid.classList.remove("shake"),500)),gameState.selectedCells=[]}
+            function giveHint(){if(hintBtn.disabled)return;const e=gameState.words.filter(e=>!gameState.foundWords.includes(e));if(0===e.length)return;const t=e[0],s=gameState.wordLocations[t][0],a=document.querySelector(`.cell[data-row="${s.row}"][data-col="${s.col}"]`);a.classList.add("hinted"),gameState.hintsUsed++,updateStats()}
+            function solvePuzzle(){if(!confirm("Are you sure? This will reveal all words."))return;let e=0;for(const t of gameState.words)gameState.foundWords.includes(t)||setTimeout(()=>{const s=gameState.wordLocations[t];s.forEach(e=>{document.querySelector(`.cell[data-row="${e.row}"][data-col="${e.col}"]`).classList.add("highlighted")}),gameState.foundWords.push(t),renderWordList(),updateStats()},e),e+=200}
+            function toggleInstructions(e=!1){const t=instructionsPanel.classList.contains("visible");e||t?(instructionsPanel.classList.remove("visible"),instructionsOverlay.style.display="none"):(instructionsPanel.classList.add("visible"),instructionsOverlay.style.display="block")}
+            
+            puzzleGrid.addEventListener("mousedown",e=>{e.target.classList.contains("cell")&&startSelection(parseInt(e.target.dataset.row),parseInt(e.target.dataset.col))});
+            puzzleGrid.addEventListener("mouseover",e=>{isDragging&&e.target.classList.contains("cell")&&updateSelection(parseInt(e.target.dataset.row),parseInt(e.target.dataset.col))});
+            window.addEventListener("mouseup",endSelection);
+            puzzleGrid.addEventListener("touchstart",e=>{e.preventDefault();const t=e.touches[0],s=document.elementFromPoint(t.clientX,t.clientY);s&&s.classList.contains("cell")&&startSelection(parseInt(s.dataset.row),parseInt(s.dataset.col))},{passive:!1});
+            puzzleGrid.addEventListener("touchmove",e=>{e.preventDefault();const t=e.touches[0],s=document.elementFromPoint(t.clientX,t.clientY);s&&s.classList.contains("cell")&&s!==lastTouchedCell&&(lastTouchedCell=s,updateSelection(parseInt(s.dataset.row),parseInt(s.dataset.col)))},{passive:!1});
+            window.addEventListener("touchend",e=>{lastTouchedCell=null,endSelection()});
+            newGameBtn.addEventListener("click",initGame);
+            playAgainBtn.addEventListener("click",initGame);
+            hintBtn.addEventListener("click",giveHint);
+            solveBtn.addEventListener("click",solvePuzzle);
+            instructionsBtnToggle.addEventListener("click",()=>toggleInstructions());
+            closeInstructionsBtn.addEventListener("click",()=>toggleInstructions(!0));
+            instructionsOverlay.addEventListener("click",()=>toggleInstructions(!0));
+            window.addEventListener("keydown",e=>{"Escape"===e.key&&instructionsPanel.classList.contains("visible")&&toggleInstructions(!0)});
+            window.addEventListener('resize', debounce(resizeGrid, 150));
+            
+            initGame();
+        });
+    </script>
+</body>
+</html>

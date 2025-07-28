@@ -1,0 +1,609 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Retro Striker</title>
+    <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap" rel="stylesheet">
+    <style>
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body {
+            margin: 0; padding: 0; overflow: hidden; background-color: #000;
+            display: flex; justify-content: center; align-items: center;
+            height: 100vh; font-family: 'Press Start 2P', cursive;
+            -webkit-font-smoothing: none; image-rendering: -moz-crisp-edges;
+            image-rendering: -webkit-crisp-edges; image-rendering: pixelated;
+        }
+        body.game-started { cursor: none; }
+        #gameContainer {
+            position: relative; width: 100%; max-width: 800px;
+            aspect-ratio: 16 / 9; background-color: #111;
+            overflow: hidden; border: 4px solid #444; border-radius: 8px;
+            box-shadow: 0 0 20px rgba(255, 255, 0, 0.3);
+        }
+        #gameCanvas { position: absolute; top: 0; left: 0; width: 100%; height: 100%; }
+        #startScreen, #gameOverScreen {
+            position: absolute; width: 100%; height: 100%;
+            display: flex; flex-direction: column; justify-content: center; align-items: center;
+            background-color: rgba(0, 0, 0, 0.85); color: white;
+            z-index: 10; text-align: center; padding: 20px;
+        }
+        #gameOverScreen { display: none; }
+        h1 {
+            color: #ff0; font-size: 2.5rem; text-shadow: 3px 3px 0 #f80, -3px -3px 0 #80f;
+            margin-bottom: 20px; line-height: 1.2;
+        }
+        p { font-size: 1rem; color: #ccc; line-height: 1.5; max-width: 80%; }
+        button {
+            padding: 12px 24px; font-size: 1rem; background-color: #f00; color: white;
+            border: none; border-radius: 5px; cursor: pointer; margin-top: 20px;
+            font-family: inherit; text-transform: uppercase; letter-spacing: 1px;
+            box-shadow: 0 4px 0 #800, 0 0 10px rgba(255, 0, 0, 0.5);
+            transition: all 0.1s;
+        }
+        button:active { transform: translateY(2px); box-shadow: 0 2px 0 #800; }
+        #hud {
+            position: absolute; top: 10px; left: 10px; right: 10px;
+            display: flex; justify-content: space-between; align-items: center;
+            z-index: 5; color: white; pointer-events: none;
+        }
+        #scoreDisplay, #healthDisplay { font-size: 1rem; text-shadow: 2px 2px 2px #000; }
+        #healthDisplay { display: flex; align-items: center; gap: 10px; }
+        #healthBarContainer { width: 120px; height: 15px; background-color: rgba(0,0,0,0.6); border: 2px solid #555; }
+        #healthBar { height: 100%; width: 100%; background: #2ecc71; transition: width 0.2s, background 0.2s; }
+        #backButton {
+            position: absolute; bottom: 10px; left: 10px; z-index: 20;
+            background-color: #444; box-shadow: 0 4px 0 #222; font-size: 0.8rem;
+            padding: 8px 16px; display: none; /* Hidden for this example */
+        }
+        #touchControls {
+            position: absolute; bottom: 0; left: 0; width: 100%; height: 150px;
+            display: none; justify-content: space-between; align-items: flex-end;
+            padding: 20px; z-index: 5; pointer-events: none;
+        }
+        .touch-group { display: flex; gap: 15px; pointer-events: all; }
+        .touch-btn {
+            width: 60px; height: 60px; background-color: rgba(255,255,255,0.2);
+            border-radius: 50%; display: flex; justify-content: center; align-items: center;
+            color: white; font-size: 1.5rem; user-select: none; -webkit-user-select: none;
+            border: 2px solid rgba(255,255,255,0.3);
+        }
+        .touch-btn:active { background-color: rgba(255,255,255,0.4); }
+        #instructionsBtn { position: absolute; top: 10px; left: 50%; transform: translateX(-50%); z-index: 20; background-color: rgba(0,0,0,0.6); font-size: 0.8rem; padding: 8px 16px; }
+        #instructionsPanel {
+            position: absolute; top: 0; left: 0; width: 280px; height: 100%;
+            background-color: rgba(0,0,0,0.9); color: white; padding: 20px;
+            border-right: 2px solid #444; z-index: 15;
+            transform: translateX(-100%); transition: transform 0.3s ease-out;
+            font-size: 0.8rem; line-height: 1.6;
+        }
+        #instructionsPanel.show { transform: translateX(0); }
+        #instructionsPanel h3 { color: #ff0; margin-bottom: 15px; }
+        #instructionsPanel ul { list-style: none; padding: 0; }
+        #instructionsPanel li { margin-bottom: 10px; }
+        
+        /* Landscape Enhancement */
+        #orientationLock {
+            display: none;
+            position: fixed;
+            top: 0; left: 0; width: 100%; height: 100%;
+            background-color: rgba(0,0,0,0.95);
+            color: white;
+            z-index: 1000;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            text-align: center;
+        }
+        #orientationLock p { font-size: 1.2rem; }
+
+        @media (max-width: 800px), (max-height: 450px) {
+            #touchControls { display: flex; }
+            #gameContainer { border: none; border-radius: 0; }
+        }
+        @media (orientation: portrait) and (max-width: 800px) {
+             #orientationLock { display: flex; }
+        }
+    </style>
+</head>
+<body>
+    <div id="gameContainer">
+        <canvas id="gameCanvas"></canvas>
+        
+        <div id="hud">
+            <div id="scoreDisplay">SCORE: 0</div>
+            <div id="healthDisplay">
+                <span>HP</span>
+                <div id="healthBarContainer"><div id="healthBar"></div></div>
+            </div>
+        </div>
+        
+        <button id="instructionsBtn">?</button>
+        <div id="instructionsPanel">
+            <h3>HOW TO PLAY</h3>
+            <ul>
+                <li><strong>Desktop:</strong></li>
+                <li>- Move: A/D or Arrow Keys</li>
+                <li>- Jump: W, Up Arrow, or Space</li>
+                <li>- Shoot: J</li>
+                <li><strong>Mobile:</strong></li>
+                <li>- Use on-screen controls.</li>
+            </ul>
+            <h3>Objective</h3>
+            <p>Survive as long as possible! Defeat enemies for points and collect power-ups to upgrade your weapon.</p>
+        </div>
+        
+        <div id="startScreen">
+            <h1>Retro Striker</h1>
+            <p>A classic run-and-gun arcade game.</p>
+            <button id="startButton">Start Game</button>
+        </div>
+        
+        <div id="gameOverScreen">
+            <h1>GAME OVER</h1>
+            <p id="finalScore">SCORE: 0</p>
+            <button id="restartButton">Play Again</button>
+        </div>
+        
+        <div id="touchControls">
+            <div class="touch-group">
+                <div class="touch-btn" id="leftBtn">←</div>
+                <div class="touch-btn" id="rightBtn">→</div>
+            </div>
+            <div class="touch-group">
+                <div class="touch-btn" id="shootBtn">A</div>
+                <div class="touch-btn" id="jumpBtn">B</div>
+            </div>
+        </div>
+        
+        <button id="backButton">Back</button>
+    </div>
+
+    <div id="orientationLock">
+        <p>Please rotate your device to landscape mode to play.</p>
+    </div>
+
+    <script>
+    document.addEventListener('DOMContentLoaded', () => {
+        const canvas = document.getElementById('gameCanvas');
+        const ctx = canvas.getContext('2d');
+        const container = document.getElementById('gameContainer');
+
+        // --- UI Elements ---
+        const startScreen = document.getElementById('startScreen');
+        const gameOverScreen = document.getElementById('gameOverScreen');
+        const startButton = document.getElementById('startButton');
+        const restartButton = document.getElementById('restartButton');
+        const scoreDisplay = document.getElementById('scoreDisplay');
+        const healthBar = document.getElementById('healthBar');
+        const finalScoreDisplay = document.getElementById('finalScore');
+        const backButton = document.getElementById('backButton');
+        const instructionsBtn = document.getElementById('instructionsBtn');
+        const instructionsPanel = document.getElementById('instructionsPanel');
+
+        // --- Game Constants ---
+        const GRAVITY = 0.5;
+
+        // --- Game State ---
+        let game;
+        
+        // --- Sprite Rendering ---
+        const sprites = { player: {}, enemy: {}, turret: {}, explosion: {} };
+
+        function drawPixelArt(ctx, drawing, x, y, scale = 1) {
+            drawing.forEach(row => {
+                const [color, ...rects] = row;
+                ctx.fillStyle = color;
+                for (let i = 0; i < rects.length; i += 4) {
+                    ctx.fillRect(x + rects[i]*scale, y + rects[i+1]*scale, rects[i+2]*scale, rects[i+3]*scale);
+                }
+            });
+        }
+        
+        function createSprites() {
+             sprites.player.run = [];
+             const playerSpriteBase = [
+                 ['#000000', 3,0,1,1, 4,0,1,1, 5,0,1,1, 6,0,1,1], ['#de986b', 3,1,1,1, 4,1,1,1, 5,1,1,1, 6,1,1,1], ['#000000', 2,2,1,1, 7,2,1,1],
+                 ['#de986b', 3,2,4,1], ['#2b4a1b', 3,3,4,1, 2,4,6,1], ['#000000', 2,5,1,1, 7,5,1,1], ['#2b4a1b', 3,5,4,1], ['#18100a', 3,6,2,1, 5,6,2,1]
+             ];
+             for (let i = 0; i < 4; i++) {
+                 const canvas = document.createElement('canvas'); canvas.width = 10; canvas.height = 8;
+                 const frameCtx = canvas.getContext('2d'); drawPixelArt(frameCtx, playerSpriteBase, 0, 0);
+                 if (i % 2 === 1) { frameCtx.clearRect(3,6,2,1); frameCtx.fillStyle = '#18100a'; frameCtx.fillRect(2,6,2,1); }
+                 sprites.player.run.push(canvas);
+             }
+             sprites.player.jump = sprites.player.run[1];
+
+             const enemySprite = [
+                 ['#000000', 2,0,4,1], ['#555555', 2,1,4,1], ['#9e2835', 2,2,4,2], ['#000000', 1,4,6,1],
+                 ['#9e2835', 2,4,4,1], ['#555555', 2,5,1,2, 5,5,1,2]
+             ];
+             sprites.enemy.run = [];
+             for (let i = 0; i < 2; i++) {
+                 const canvas = document.createElement('canvas'); canvas.width = 8; canvas.height = 8;
+                 const frameCtx = canvas.getContext('2d'); drawPixelArt(frameCtx, enemySprite, 0, 0);
+                 if (i % 2 === 1) { frameCtx.clearRect(2,5,1,2); frameCtx.fillStyle = '#555555'; frameCtx.fillRect(1,5,1,2); }
+                 sprites.enemy.run.push(canvas);
+             }
+
+             sprites.turret.base = document.createElement('canvas'); sprites.turret.base.width = 16; sprites.turret.base.height = 10;
+             drawPixelArt(sprites.turret.base.getContext('2d'), [['#6a6a6a', 0,4,16,6], ['#4a4a4a', 2,2,12,2], ['#8a8a8a', 4,0,8,2]], 0, 0);
+        }
+        
+        class Game {
+            constructor(width, height) {
+                this.width = width; this.height = height; this.keys = new Set();
+                this.player = new Player(this); this.platforms = []; this.enemies = []; this.bullets = [];
+                this.enemyBullets = []; this.powerUps = []; this.particles = [];
+                this.camera = { x: 0, y: 0 }; this.score = 0; this.gameOver = false;
+                this.lastEnemySpawn = 0; this.lastPowerUpSpawn = 0;
+                this.platformWidth = 150; this.platformGap = 100;
+                this.initLevel();
+            }
+            initLevel() {
+                this.platforms.push(new Platform(this, -200, this.height - 40, this.width + 400, 40));
+                let currentX = 200;
+                while(currentX < this.width * 2) {
+                    this.addPlatform(currentX);
+                    currentX += this.platformWidth + this.platformGap * (0.5 + Math.random());
+                }
+            }
+            addPlatform(x) {
+                const y = this.height - 80 - Math.random() * 200;
+                this.platforms.push(new Platform(this, x, y, this.platformWidth, 20));
+                if (Math.random() < 0.3) {
+                    this.enemies.push(new Turret(this, x + this.platformWidth / 2 - 12, y - 20));
+                }
+            }
+            update(timestamp) {
+                if (this.gameOver) return;
+                this.player.update(this.keys, this.platforms);
+                this.bullets = this.bullets.filter(b => !b.update());
+                this.enemyBullets = this.enemyBullets.filter(b => !b.update());
+                this.enemies = this.enemies.filter(e => !e.update());
+                this.powerUps = this.powerUps.filter(p => !p.update());
+                this.particles = this.particles.filter(p => !p.update());
+                
+                this.checkCollisions();
+                
+                this.camera.x = this.player.x - this.width / 4;
+
+                const lastPlatform = this.platforms[this.platforms.length - 1];
+                if (lastPlatform.x - this.camera.x < this.width) {
+                    this.addPlatform(lastPlatform.x + this.platformWidth + this.platformGap * (0.5 + Math.random()));
+                }
+                
+                if (timestamp - this.lastEnemySpawn > 3000) {
+                    this.enemies.push(new Enemy(this, this.player.x + this.width, this.height - 80));
+                    this.lastEnemySpawn = timestamp;
+                }
+            }
+            draw(ctx) {
+                ctx.save();
+                ctx.translate(-this.camera.x, -this.camera.y);
+
+                const skyGradient = ctx.createLinearGradient(this.camera.x, 0, this.camera.x, this.height);
+                skyGradient.addColorStop(0, '#1a1a2e');
+                skyGradient.addColorStop(1, '#16213e');
+                ctx.fillStyle = skyGradient;
+                ctx.fillRect(this.camera.x, 0, this.width, this.height);
+
+                this.platforms.forEach(p => p.draw(ctx));
+                this.powerUps.forEach(p => p.draw(ctx));
+                this.enemies.forEach(e => e.draw(ctx));
+                this.player.draw(ctx);
+                this.bullets.forEach(b => b.draw(ctx));
+                this.enemyBullets.forEach(b => b.draw(ctx));
+                this.particles.forEach(p => p.draw(ctx));
+                
+                ctx.restore();
+            }
+            checkCollisions() {
+                this.bullets.forEach((bullet, bIndex) => {
+                    this.enemies.forEach((enemy, eIndex) => {
+                        if (checkCollision(bullet, enemy)) {
+                            this.bullets.splice(bIndex, 1);
+                            enemy.hit(25);
+                        }
+                    });
+                });
+                this.enemyBullets.forEach((bullet, bIndex) => {
+                    if (checkCollision(bullet, this.player)) {
+                        this.enemyBullets.splice(bIndex, 1);
+                        this.player.hit(10);
+                    }
+                });
+                this.powerUps.forEach((powerUp, pIndex) => {
+                    if (checkCollision(powerUp, this.player)) {
+                        powerUp.apply(this.player);
+                        this.powerUps.splice(pIndex, 1);
+                    }
+                });
+            }
+        }
+        
+        class GameObject {
+            constructor(game, x, y, width, height) {
+                this.game = game;
+                this.x = x; this.y = y; this.width = width; this.height = height;
+            }
+        }
+
+        class Player extends GameObject {
+            constructor(game) {
+                super(game, 100, game.height - 100, 40, 60); // Adjusted size for better sprite ratio
+                this.speed = 4; this.jumpForce = 12; this.velocityY = 0;
+                this.isJumping = true; this.direction = 1; this.lastShot = 0;
+                this.shootDelay = 200; this.health = 100;
+                this.frameX = 0; this.frameTimer = 0; this.frameInterval = 100;
+                this.weapon = 'normal';
+                // Adjust sprite aspect ratio
+                this.width = (sprites.player.run[0].width / sprites.player.run[0].height) * this.height;
+            }
+            update(keys, platforms) {
+                let isMoving = false;
+                if (keys.has('arrowleft') || keys.has('a')) { this.x -= this.speed; this.direction = -1; isMoving = true; }
+                if (keys.has('arrowright') || keys.has('d')) { this.x += this.speed; this.direction = 1; isMoving = true; }
+                
+                if ((keys.has('arrowup') || keys.has('w') || keys.has(' ')) && !this.isJumping) {
+                    this.velocityY = -this.jumpForce; this.isJumping = true;
+                }
+                
+                if (keys.has('j')) this.shoot();
+
+                this.velocityY += GRAVITY; this.y += this.velocityY;
+                
+                let onPlatform = false;
+                platforms.forEach(platform => {
+                    if (this.x + this.width > platform.x && this.x < platform.x + platform.width &&
+                        this.y + this.height >= platform.y && this.y + this.height <= platform.y + platform.height && this.velocityY >= 0) {
+                        this.y = platform.y - this.height; this.velocityY = 0; this.isJumping = false; onPlatform = true;
+                    }
+                });
+                
+                if(this.y > this.game.height) this.hit(100);
+
+                this.frameTimer += 16.67; // approx time per frame
+                if(isMoving && !this.isJumping && this.frameTimer > this.frameInterval) {
+                    this.frameX = (this.frameX + 1) % sprites.player.run.length;
+                    this.frameTimer = 0;
+                }
+            }
+            draw(ctx) {
+                ctx.save();
+                let frame = this.isJumping ? sprites.player.jump : sprites.player.run[this.frameX];
+                if (this.direction === -1) {
+                    ctx.scale(-1, 1);
+                    ctx.drawImage(frame, -this.x - this.width, this.y, this.width, this.height);
+                } else {
+                    ctx.drawImage(frame, this.x, this.y, this.width, this.height);
+                }
+                ctx.restore();
+            }
+            shoot() {
+                const now = performance.now();
+                if (now - this.lastShot < this.shootDelay) return;
+                this.lastShot = now;
+                const bulletY = this.y + this.height / 2.5; // Adjusted bullet origin
+                const bulletX = this.direction === 1 ? this.x + this.width : this.x;
+                if(this.weapon === 'spread') {
+                    for(let i = -1; i <= 1; i++) {
+                        this.game.bullets.push(new Bullet(this.game, bulletX, bulletY, this.direction, i * 0.2));
+                    }
+                } else {
+                    this.game.bullets.push(new Bullet(this.game, bulletX, bulletY, this.direction, 0));
+                }
+            }
+            hit(damage) {
+                this.health -= damage;
+                healthBar.style.width = `${Math.max(0, this.health)}%`;
+                if(this.health <= 0 && !this.game.gameOver) {
+                    this.game.gameOver = true;
+                    for (let i = 0; i < 30; i++) this.game.particles.push(new Particle(this.game, this.x, this.y, '#de986b'));
+                    setTimeout(showGameOver, 1000);
+                }
+            }
+        }
+        
+        class Enemy extends GameObject {
+            constructor(game, x, y) {
+                super(game, x, y, 32, 53); // Adjusted size
+                this.speed = 1 + Math.random();
+                this.health = 50; this.frameX = 0; this.frameTimer = 0; this.frameInterval = 150;
+                this.markedForDeletion = false;
+                this.width = (sprites.enemy.run[0].width / sprites.enemy.run[0].height) * this.height;
+            }
+            update() {
+                this.x -= this.speed;
+                this.frameTimer += 16.67;
+                if(this.frameTimer > this.frameInterval) {
+                    this.frameX = (this.frameX + 1) % sprites.enemy.run.length;
+                    this.frameTimer = 0;
+                }
+                if (this.x + this.width < this.game.camera.x) this.markedForDeletion = true;
+                return this.markedForDeletion;
+            }
+            draw(ctx) {
+                ctx.drawImage(sprites.enemy.run[this.frameX], this.x, this.y, this.width, this.height);
+            }
+            hit(damage) {
+                this.health -= damage;
+                if(this.health <= 0) {
+                    for (let i = 0; i < 20; i++) this.game.particles.push(new Particle(this.game, this.x, this.y, '#9e2835'));
+                    if(Math.random() < 0.2) this.game.powerUps.push(new PowerUp(this.game, this.x, this.y, 'spread'));
+                    this.game.score += 100;
+                    scoreDisplay.textContent = `SCORE: ${this.game.score}`;
+                    this.markedForDeletion = true;
+                }
+            }
+        }
+
+        class Turret extends Enemy {
+             constructor(game, x, y) {
+                super(game, x, y);
+                this.width = 32; this.height = 20; this.health = 100; this.lastShot = 0; this.shootDelay = 2000;
+             }
+             update() {
+                 const now = performance.now();
+                 if(now - this.lastShot > this.shootDelay && Math.abs(this.x - this.game.player.x) < 400) {
+                     const angle = Math.atan2(this.game.player.y - this.y, this.game.player.x - this.x);
+                     this.game.enemyBullets.push(new EnemyBullet(this.game, this.x + this.width / 2, this.y, Math.cos(angle), Math.sin(angle)));
+                     this.lastShot = now;
+                 }
+                return this.markedForDeletion;
+             }
+             draw(ctx) {
+                 ctx.drawImage(sprites.turret.base, this.x, this.y, this.width, this.height);
+             }
+        }
+        
+        class Bullet extends GameObject {
+            constructor(game, x, y, dir, angleY) {
+                super(game, x, y, 8, 4);
+                this.speed = 10; this.direction = dir;
+                this.velocityY = angleY * this.speed;
+            }
+            update() { this.x += this.speed * this.direction; this.y += this.velocityY; return (this.x < this.game.camera.x || this.x > this.game.camera.x + this.game.width); }
+            draw(ctx) { ctx.fillStyle = '#f1c40f'; ctx.fillRect(this.x, this.y, this.width, this.height); }
+        }
+
+        class EnemyBullet extends Bullet {
+            constructor(game, x, y, dirX, dirY) {
+                super(game, x, y, 0, 0); this.speed = 5;
+                this.velocityX = dirX * this.speed; this.velocityY = dirY * this.speed;
+            }
+            update() { this.x += this.velocityX; this.y += this.velocityY; return (this.x < this.game.camera.x || this.x > this.game.camera.x + this.game.width); }
+            draw(ctx) { ctx.fillStyle = '#e74c3c'; ctx.beginPath(); ctx.arc(this.x, this.y, 4, 0, Math.PI * 2); ctx.fill(); }
+        }
+
+        class Platform extends GameObject {
+             constructor(game, x, y, width, height) { super(game, x, y, width, height); this.color = '#27ae60'; }
+             draw(ctx) { ctx.fillStyle = this.color; ctx.fillRect(this.x, this.y, this.width, this.height); }
+        }
+
+        class PowerUp extends GameObject {
+            constructor(game, x, y, type) {
+                super(game, x, y, 20, 20);
+                this.type = type; this.color = '#a29bfe';
+            }
+            update() { return this.x + this.width < this.game.camera.x; }
+            draw(ctx) {
+                ctx.fillStyle = this.color;
+                ctx.fillRect(this.x, this.y, this.width, this.height);
+                ctx.fillStyle = 'white'; ctx.font = '16px "Press Start 2P"'; ctx.textAlign = 'center';
+                ctx.fillText('S', this.x + this.width/2, this.y + this.height/1.5);
+            }
+            apply(player) {
+                player.weapon = this.type;
+                setTimeout(() => { if (player) player.weapon = 'normal'; }, 10000); // Power-up lasts 10 seconds
+            }
+        }
+        
+        class Particle extends GameObject {
+            constructor(game, x, y, color) {
+                super(game, x, y, Math.random() * 3 + 1, Math.random() * 3 + 1);
+                this.velocityX = (Math.random() - 0.5) * 8; this.velocityY = (Math.random() - 0.5) * 8;
+                this.lifespan = 50; this.color = color;
+            }
+            update() { this.x += this.velocityX; this.y += this.velocityY; this.lifespan--; return this.lifespan <= 0; }
+            draw(ctx) { ctx.globalAlpha = this.lifespan / 50; ctx.fillStyle = this.color; ctx.fillRect(this.x, this.y, this.width, this.height); ctx.globalAlpha = 1.0; }
+        }
+
+        function checkCollision(obj1, obj2) {
+            return obj1.x < obj2.x + obj2.width && obj1.x + obj1.width > obj2.x &&
+                   obj1.y < obj2.y + obj2.height && obj1.y + obj1.height > obj2.y;
+        }
+
+        function showGameOver() {
+            finalScoreDisplay.textContent = `SCORE: ${game.score}`;
+            gameOverScreen.style.display = 'flex';
+        }
+        
+        let lastTime = 0;
+        function gameLoop(timestamp) {
+            if (!game || game.gameOver) {
+                lastTime = 0;
+                return;
+            }
+            const deltaTime = timestamp - lastTime;
+            lastTime = timestamp;
+
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            game.update(timestamp); // Pass timestamp for timed events
+            game.draw(ctx);
+            requestAnimationFrame(gameLoop);
+        }
+
+        function setupControls() {
+            window.addEventListener('keydown', e => game && game.keys.add(e.key.toLowerCase()));
+            window.addEventListener('keyup', e => game && game.keys.delete(e.key.toLowerCase()));
+            
+            const controls = [
+                { el: document.getElementById('leftBtn'), key: 'a' },
+                { el: document.getElementById('rightBtn'), key: 'd' },
+                { el: document.getElementById('jumpBtn'), key: ' ' },
+                { el: document.getElementById('shootBtn'), key: 'j' }
+            ];
+            controls.forEach(c => {
+                c.el.addEventListener('touchstart', e => { e.preventDefault(); if(game) game.keys.add(c.key); }, { passive: false });
+                c.el.addEventListener('touchend', e => { e.preventDefault(); if(game) game.keys.delete(c.key); }, { passive: false });
+            });
+        }
+        
+        function resize() {
+            const aspectRatio = 16 / 9;
+            const screenWidth = window.innerWidth;
+            const screenHeight = window.innerHeight;
+            
+            if (screenWidth / screenHeight > aspectRatio) {
+                container.style.height = `${screenHeight}px`;
+                container.style.width = `${screenHeight * aspectRatio}px`;
+            } else {
+                container.style.width = `${screenWidth}px`;
+                container.style.height = `${screenWidth / aspectRatio}px`;
+            }
+            // Set canvas resolution. This can be a fixed value for performance.
+            canvas.width = 800;
+            canvas.height = 450;
+        }
+        
+        async function startGame() {
+            // Attempt to lock screen orientation for mobile
+            if ('ontouchstart' in window) {
+                try {
+                    await screen.orientation.lock('landscape');
+                } catch (err) {
+                    console.warn("Could not lock screen orientation:", err);
+                }
+            }
+            
+            startScreen.style.display = 'none';
+            gameOverScreen.style.display = 'none';
+            game = new Game(canvas.width, canvas.height);
+            document.body.classList.add('game-started');
+            
+            // Reset UI
+            healthBar.style.width = '100%';
+            scoreDisplay.textContent = 'SCORE: 0';
+            
+            requestAnimationFrame(gameLoop);
+        }
+
+        window.addEventListener('resize', resize);
+        startButton.addEventListener('click', startGame);
+        restartButton.addEventListener('click', startGame);
+        // backButton.addEventListener('click', () => window.location.href = '/');
+        
+        instructionsBtn.addEventListener('click', (e) => {
+             e.stopPropagation();
+             instructionsPanel.classList.toggle('show');
+        });
+        document.body.addEventListener('click', () => instructionsPanel.classList.remove('show'));
+        
+        resize();
+        createSprites();
+        setupControls();
+    });
+    </script>
+</body>
+</html>

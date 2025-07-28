@@ -1,0 +1,641 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <title>Super Platformer Adventure</title>
+    <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --primary-font: 'Press Start 2P', cursive;
+            --sky-blue: #5c94fc;
+            --dark-blue: #000080;
+            --mario-red: #e52521;
+            --mario-green: #43b047;
+            --mario-brown: #a04020;
+        }
+
+        body {
+            margin: 0;
+            padding: 0;
+            overflow: hidden;
+            background: var(--dark-blue);
+            font-family: var(--primary-font);
+            touch-action: manipulation; /* Prevents zooming on double tap */
+        }
+        
+        #game-container {
+            position: relative;
+            width: 100vw;
+            height: 100vh;
+            overflow: hidden;
+        }
+        
+        #game-canvas {
+            display: block;
+            background-color: var(--sky-blue);
+        }
+        
+        .screen-overlay {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.75);
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            color: white;
+            z-index: 10;
+            text-align: center;
+        }
+
+        .screen-overlay h1 {
+            font-size: clamp(2rem, 8vw, 4rem);
+            color: var(--mario-red);
+            text-shadow: 4px 4px 0 #000;
+            margin-bottom: 2rem;
+        }
+        
+        .action-button {
+            background: var(--mario-red);
+            color: white;
+            border: none;
+            padding: 15px 30px;
+            font-size: clamp(1rem, 4vw, 1.5rem);
+            font-family: var(--primary-font);
+            border-radius: 10px;
+            cursor: pointer;
+            border-bottom: 5px solid #a40000;
+            transition: all 0.1s ease-in-out;
+        }
+        .action-button:hover { background: #ff4c4c; }
+        .action-button:active {
+            transform: translateY(5px);
+            border-bottom-width: 0;
+        }
+
+        #game-ui {
+            position: absolute;
+            top: 20px;
+            left: 0;
+            width: 100%;
+            display: flex;
+            justify-content: space-around;
+            color: white;
+            font-size: clamp(0.8rem, 3vw, 1.2rem);
+            text-shadow: 2px 2px 0 #000;
+            z-index: 5;
+            pointer-events: none;
+        }
+
+        #game-over h2 {
+            font-size: clamp(2rem, 8vw, 3rem);
+            color: var(--mario-red);
+            text-shadow: 3px 3px 0 #000;
+            margin-bottom: 1rem;
+        }
+        
+        #restart-button {
+            background: var(--mario-green);
+            border-bottom-color: #006400;
+        }
+        #restart-button:hover { background: #66bb6a; }
+
+        .controls {
+            position: absolute;
+            bottom: 20px;
+            width: 100%;
+            display: flex;
+            justify-content: space-between;
+            padding: 0 20px;
+            box-sizing: border-box;
+            z-index: 5;
+        }
+        .mobile-controls { display: flex; gap: 20px; }
+        
+        .control-btn {
+            background: rgba(255, 255, 255, 0.4);
+            color: white;
+            border: 3px solid rgba(255, 255, 255, 0.7);
+            width: 70px;
+            height: 70px;
+            border-radius: 50%;
+            font-size: 2.5rem;
+            cursor: pointer;
+            display: none; /* Hidden on desktop */
+            user-select: none;
+        }
+        .control-btn:active { background: rgba(255, 255, 255, 0.7); }
+        
+        #instructions-btn {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            z-index: 6;
+            width: 50px;
+            height: 50px;
+            background: var(--mario-green);
+            color: white;
+            font-size: 2rem;
+            border-radius: 50%;
+            border: 3px solid white;
+            cursor: pointer;
+        }
+        
+        #instructions-panel {
+            padding: 20px;
+        }
+        #instructions-panel h2 {
+            font-size: 2rem;
+            color: var(--mario-green);
+            margin-bottom: 2rem;
+        }
+        #instructions-panel p {
+            font-size: 1rem;
+            line-height: 1.5;
+            max-width: 400px;
+        }
+        #close-instructions-btn {
+            margin-top: 20px;
+            background-color: var(--mario-red);
+            border-bottom-color: #a40000;
+        }
+        
+        .header-bar {
+            position: absolute;
+            top: 10px;
+            left: 10px;
+            z-index: 15;
+        }
+        .header-bar a {
+            background: var(--dark-blue);
+            color: white;
+            padding: 10px 15px;
+            text-decoration: none;
+            border-radius: 5px;
+            border-bottom: 3px solid #000050;
+        }
+        .header-bar a:hover {
+            background: #0000a0;
+        }
+
+        @media (pointer: coarse) {
+            .control-btn { display: block; }
+        }
+    </style>
+</head>
+<body>
+    <div class="header-bar">
+        <a href="/" class="action-button">← Back</a>
+    </div>
+
+    <div id="game-container">
+        <canvas id="game-canvas"></canvas>
+        
+        <div id="game-ui">
+            <div>SCORE<br><span id="score">0</span></div>
+            <div>COINS<br><span id="coins">0</span></div>
+            <div>WORLD<br><span id="world">1-1</span></div>
+            <div>LIVES<br><span id="lives">3</span></div>
+        </div>
+        
+        <div id="start-screen" class="screen-overlay">
+            <h1>Super Platformer</h1>
+            <button id="start-button" class="action-button">Start Game</button>
+        </div>
+        
+        <div id="game-over" class="screen-overlay" style="display: none;">
+            <h2>GAME OVER</h2>
+            <p>FINAL SCORE: <span id="final-score">0</span></p>
+            <button id="restart-button" class="action-button">Play Again</button>
+        </div>
+        
+        <button id="instructions-btn">?</button>
+        <div id="instructions-panel" class="screen-overlay" style="display: none;">
+            <h2>Instructions</h2>
+            <p>Use ← → arrow keys or A/D to move.</p>
+            <p>Use Spacebar, ↑ arrow, or W to jump.</p>
+            <p>Stomp on enemies to defeat them. Collect coins for points. Find the flagpole to finish the level!</p>
+            <button id="close-instructions-btn" class="action-button">Close</button>
+        </div>
+
+        <div class="controls">
+            <div class="mobile-controls">
+                <button class="control-btn" id="left-btn">←</button>
+                <button class="control-btn" id="right-btn">→</button>
+            </div>
+            <button class="control-btn" id="jump-btn">↑</button>
+        </div>
+    </div>
+
+    <script>
+        // Game constants
+        const GRAVITY = 0.6;
+        const PLAYER_JUMP_FORCE = -14;
+        const PLAYER_SPEED = 5;
+        const CAMERA_LAG = 0.1;
+        const TILE_SIZE = 40;
+        
+        // Game variables
+        let canvas, ctx, gameWidth, gameHeight;
+        let keys = {};
+        let gameRunning = false;
+        let score = 0, coins = 0, lives = 3;
+        let currentWorld = "1-1";
+        let cameraOffset = { x: 0, y: 0 };
+        
+        let player, platforms = [], coinsArray = [], enemies = [], flagpole;
+        
+        // DOM elements
+        const startScreen = document.getElementById('start-screen');
+        const startButton = document.getElementById('start-button');
+        const gameOverScreen = document.getElementById('game-over');
+        const restartButton = document.getElementById('restart-button');
+        const ui = {
+            score: document.getElementById('score'),
+            coins: document.getElementById('coins'),
+            lives: document.getElementById('lives'),
+            world: document.getElementById('world'),
+            finalScore: document.getElementById('final-score'),
+        };
+        const instructionsBtn = document.getElementById('instructions-btn');
+        const instructionsPanel = document.getElementById('instructions-panel');
+        const closeInstructionsBtn = document.getElementById('close-instructions-btn');
+
+        // Audio
+        let audioCtx;
+        const sounds = {};
+
+        function init() {
+            canvas = document.getElementById('game-canvas');
+            ctx = canvas.getContext('2d');
+            
+            resizeCanvas();
+            window.addEventListener('resize', resizeCanvas);
+            
+            setupInputListeners();
+            
+            startButton.addEventListener('click', startGame);
+            restartButton.addEventListener('click', restartGame);
+
+            instructionsBtn.addEventListener('click', () => instructionsPanel.style.display = 'flex');
+            closeInstructionsBtn.addEventListener('click', () => instructionsPanel.style.display = 'none');
+        }
+        
+        function setupInputListeners() {
+            const keyMap = {
+                ArrowLeft: 'left', a: 'left', A: 'left',
+                ArrowRight: 'right', d: 'right', D: 'right',
+                ArrowUp: 'jump', w: 'jump', W: 'jump', ' ': 'jump'
+            };
+
+            window.addEventListener('keydown', (e) => {
+                if (keyMap[e.key]) keys[keyMap[e.key]] = true;
+                if (['ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight', ' '].includes(e.key)) e.preventDefault();
+            });
+            window.addEventListener('keyup', (e) => {
+                if (keyMap[e.key]) keys[keyMap[e.key]] = false;
+            });
+            
+            const touchMap = {
+                'left-btn': 'left',
+                'right-btn': 'right',
+                'jump-btn': 'jump'
+            };
+
+            for (const [btnId, key] of Object.entries(touchMap)) {
+                const btn = document.getElementById(btnId);
+                btn.addEventListener('touchstart', (e) => { e.preventDefault(); keys[key] = true; }, { passive: false });
+                btn.addEventListener('touchend', (e) => { e.preventDefault(); keys[key] = false; }, { passive: false });
+            }
+        }
+        
+        function initAudio() {
+            if (audioCtx) return;
+            audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+        }
+
+        function playSound(type) {
+            if (!audioCtx) return;
+            const osc = audioCtx.createOscillator();
+            const gain = audioCtx.createGain();
+            osc.connect(gain);
+            gain.connect(audioCtx.destination);
+            
+            switch(type) {
+                case 'jump':
+                    osc.type = 'square';
+                    osc.frequency.setValueAtTime(400, audioCtx.currentTime);
+                    osc.frequency.linearRampToValueAtTime(800, audioCtx.currentTime + 0.1);
+                    gain.gain.setValueAtTime(0.1, audioCtx.currentTime);
+                    gain.gain.exponentialRampToValueAtTime(0.00001, audioCtx.currentTime + 0.1);
+                    break;
+                case 'coin':
+                    osc.type = 'sine';
+                    osc.frequency.setValueAtTime(880, audioCtx.currentTime);
+                    gain.gain.setValueAtTime(0.2, audioCtx.currentTime);
+                    gain.gain.exponentialRampToValueAtTime(0.00001, audioCtx.currentTime + 0.1);
+                    break;
+                case 'stomp':
+                    osc.type = 'sawtooth';
+                    osc.frequency.setValueAtTime(200, audioCtx.currentTime);
+                    gain.gain.setValueAtTime(0.3, audioCtx.currentTime);
+                    gain.gain.exponentialRampToValueAtTime(0.00001, audioCtx.currentTime + 0.2);
+                    break;
+                case 'breakblock':
+                    osc.type = 'triangle';
+                    osc.frequency.setValueAtTime(440, audioCtx.currentTime);
+                    gain.gain.setValueAtTime(0.3, audioCtx.currentTime);
+                    gain.gain.exponentialRampToValueAtTime(0.00001, audioCtx.currentTime + 0.15);
+                    break;
+                case 'die':
+                    osc.type = 'sawtooth';
+                    osc.frequency.setValueAtTime(440, audioCtx.currentTime);
+                    osc.frequency.exponentialRampToValueAtTime(100, audioCtx.currentTime + 0.5);
+                    gain.gain.setValueAtTime(0.3, audioCtx.currentTime);
+                    gain.gain.exponentialRampToValueAtTime(0.00001, audioCtx.currentTime + 0.5);
+                    break;
+            }
+            osc.start();
+            osc.stop(audioCtx.currentTime + 0.5);
+        }
+
+        function resizeCanvas() {
+            gameWidth = window.innerWidth;
+            gameHeight = window.innerHeight;
+            canvas.width = gameWidth;
+            canvas.height = gameHeight;
+        }
+        
+        function startGame() {
+            initAudio();
+            startScreen.style.display = 'none';
+            resetGameState(3, 0, 0, "1-1");
+            loadLevel(currentWorld);
+            if (!gameRunning) {
+                gameRunning = true;
+                gameLoop();
+            }
+        }
+        
+        function restartGame() {
+            gameOverScreen.style.display = 'none';
+            startGame();
+        }
+        
+        function resetGameState(startLives, startScore, startCoins, startWorld) {
+            lives = startLives;
+            score = startScore;
+            coins = startCoins;
+            currentWorld = startWorld;
+            cameraOffset = { x: 0, y: 0 };
+            updateUI();
+        }
+
+        function updateUI() {
+            ui.score.textContent = score.toString().padStart(6, '0');
+            ui.coins.textContent = coins.toString().padStart(2, '0');
+            ui.lives.textContent = lives;
+            ui.world.textContent = currentWorld;
+        }
+        
+        function loadLevel(world) {
+            platforms = []; enemies = []; coinsArray = [];
+            player = { x: 100, y: gameHeight - 150, width: 38, height: 40, velocityX: 0, velocityY: 0, isJumping: false, direction: 'right', invincible: false };
+            
+            // Simple level design
+            for (let i = 0; i < 200; i++) {
+                if (i < 80 || (i > 85 && i < 150) || i > 155) {
+                    createPlatform(i * TILE_SIZE, gameHeight - TILE_SIZE, 'ground');
+                }
+            }
+            createPlatform(200, gameHeight - 150, 'brick');
+            createPlatform(240, gameHeight - 150, 'brick');
+            createPlatform(280, gameHeight - 150, 'brick');
+            createPlatform(240, gameHeight - 280, 'brick');
+            
+            createEnemy(600, gameHeight - 80);
+            createEnemy(800, gameHeight - 80);
+            
+            for (let i = 0; i < 5; i++) createCoin(400 + i * 50, gameHeight - 80);
+            
+            flagpole = { x: 180 * TILE_SIZE, y: gameHeight - TILE_SIZE * 9, width: 10, height: TILE_SIZE * 8, reached: false };
+        }
+        
+        function createEntity(arr, properties) { arr.push(properties); }
+        function createPlatform(x, y, type) { createEntity(platforms, { x, y, width: TILE_SIZE, height: TILE_SIZE, type }); }
+        function createEnemy(x, y) { createEntity(enemies, { x, y, width: 40, height: 40, velocityX: -1, state: 'walking' }); }
+        function createCoin(x, y) { createEntity(coinsArray, { x, y, width: 20, height: 20 }); }
+        
+        function gameLoop() {
+            if (!gameRunning) return;
+            update();
+            render();
+            requestAnimationFrame(gameLoop);
+        }
+        
+        function update() {
+            updatePlayer();
+            updateEnemies();
+            checkCollisions();
+            updateCamera();
+        }
+        
+        function updatePlayer() {
+            player.velocityX = 0;
+            if (keys.left) player.velocityX = -PLAYER_SPEED;
+            if (keys.right) player.velocityX = PLAYER_SPEED;
+            if (keys.jump && !player.isJumping) {
+                player.velocityY = PLAYER_JUMP_FORCE;
+                player.isJumping = true;
+                playSound('jump');
+            }
+            
+            player.velocityY += GRAVITY;
+            player.x += player.velocityX;
+            player.y += player.velocityY;
+            
+            if (player.velocityX < 0) player.direction = 'left';
+            if (player.velocityX > 0) player.direction = 'right';
+        }
+
+        function updateEnemies() {
+            enemies.forEach(enemy => {
+                if (enemy.state === 'walking') {
+                    enemy.x += enemy.velocityX;
+                    // Basic AI: turn around at edges of platforms
+                    const groundCheckX = enemy.velocityX > 0 ? enemy.x + enemy.width : enemy.x;
+                    let onGround = false;
+                    for(const p of platforms) {
+                        if (groundCheckX > p.x && groundCheckX < p.x + p.width && enemy.y + enemy.height === p.y) {
+                            onGround = true;
+                            break;
+                        }
+                    }
+                    if (!onGround) enemy.velocityX *= -1;
+                }
+            });
+        }
+
+        function checkCollisions() {
+            player.isJumping = true;
+            platforms.forEach(p => checkCollision(player, p));
+            coinsArray = coinsArray.filter(c => !checkCollision(player, c, handleCoinCollision));
+            enemies.forEach(e => checkCollision(player, e, handleEnemyCollision));
+            if (flagpole) checkCollision(player, flagpole, handleFlagpoleCollision);
+
+            if (player.y > gameHeight + 100) playerDeath();
+        }
+        
+        function checkCollision(objA, objB, callback) {
+            if (objA.x < objB.x + objB.width && objA.x + objA.width > objB.x &&
+                objA.y < objB.y + objB.height && objA.y + objA.height > objB.y) {
+                if (callback) callback(objA, objB);
+                else handlePlatformCollision(objA, objB);
+                return true;
+            }
+            return false;
+        }
+
+        function handlePlatformCollision(player, platform) {
+            const prevPlayerY = player.y - player.velocityY;
+            if (player.velocityY > 0 && prevPlayerY + player.height <= platform.y) {
+                player.y = platform.y - player.height;
+                player.velocityY = 0;
+                player.isJumping = false;
+            } else if (player.velocityY < 0 && prevPlayerY >= platform.y + platform.height) {
+                player.y = platform.y + platform.height;
+                player.velocityY = 0;
+                if(platform.type === 'brick') { // Break brick from below
+                    platforms = platforms.filter(p => p !== platform);
+                    playSound('breakblock');
+                    document.body.style.animation = 'shake 0.1s';
+                    setTimeout(() => document.body.style.animation = '', 100);
+                }
+            } else if (player.velocityX > 0 && player.x + player.width - player.velocityX <= platform.x) {
+                player.x = platform.x - player.width;
+            } else if (player.velocityX < 0 && player.x - player.velocityX >= platform.x + platform.width) {
+                player.x = platform.x + platform.width;
+            }
+        }
+        
+        function handleCoinCollision() {
+            coins++;
+            score += 200;
+            playSound('coin');
+            updateUI();
+        }
+
+        function handleEnemyCollision(player, enemy) {
+            if (player.velocityY > 0 && (player.y + player.height - player.velocityY) <= enemy.y) {
+                enemy.state = 'squashed';
+                player.velocityY = PLAYER_JUMP_FORCE * 0.7;
+                score += 100;
+                playSound('stomp');
+                updateUI();
+                setTimeout(() => enemies = enemies.filter(e => e !== enemy), 200);
+            } else if (!player.invincible) {
+                playerDeath();
+            }
+        }
+        
+        function handleFlagpoleCollision() {
+            if (!flagpole.reached) {
+                flagpole.reached = true;
+                score += 5000;
+                updateUI();
+                setTimeout(levelComplete, 1000);
+            }
+        }
+        
+        function playerDeath() {
+            if (player.invincible) return;
+            lives--;
+            playSound('die');
+            updateUI();
+            if (lives <= 0) {
+                gameOver();
+            } else {
+                player.invincible = true;
+                loadLevel(currentWorld); // Respawn
+                setTimeout(() => player.invincible = false, 2000);
+            }
+        }
+        
+        function levelComplete() {
+            gameRunning = false;
+            // For a full game, you'd load the next level here.
+            gameOver("YOU WIN!");
+        }
+
+        function gameOver(message = "GAME OVER") {
+            gameRunning = false;
+            gameOverScreen.querySelector('h2').textContent = message;
+            ui.finalScore.textContent = score;
+            gameOverScreen.style.display = 'flex';
+        }
+        
+        function updateCamera() {
+            const targetX = player.x - gameWidth / 3;
+            cameraOffset.x += (targetX - cameraOffset.x) * CAMERA_LAG;
+            cameraOffset.x = Math.max(0, cameraOffset.x);
+        }
+
+        function render() {
+            ctx.clearRect(0, 0, gameWidth, gameHeight);
+            ctx.save();
+            ctx.translate(-cameraOffset.x, -cameraOffset.y);
+            
+            drawBackground();
+            
+            [platforms, coinsArray, enemies].flat().forEach(obj => draw(obj));
+            draw(player);
+            if (flagpole) draw(flagpole);
+            
+            ctx.restore();
+        }
+        
+        function draw(obj) {
+            if (obj === player) {
+                ctx.fillStyle = player.invincible && Math.floor(Date.now() / 100) % 2 ? 'rgba(255,0,0,0.5)' : '#FF5733';
+                ctx.fillRect(obj.x, obj.y, obj.width, obj.height);
+            } else if (obj.type === 'ground') {
+                ctx.fillStyle = '#d2691e';
+                ctx.fillRect(obj.x, obj.y, obj.width, obj.height);
+            } else if (obj.type === 'brick') {
+                ctx.fillStyle = '#b22222';
+                ctx.fillRect(obj.x, obj.y, obj.width, obj.height);
+            } else if (coinsArray.includes(obj)) {
+                ctx.fillStyle = 'gold';
+                ctx.beginPath();
+                ctx.arc(obj.x + obj.width / 2, obj.y + obj.height / 2, obj.width / 2, 0, Math.PI * 2);
+                ctx.fill();
+            } else if (enemies.includes(obj)) {
+                ctx.fillStyle = obj.state === 'squashed' ? '#5a2d0c' : '#8b4513';
+                ctx.fillRect(obj.x, obj.y, obj.width, obj.state === 'squashed' ? obj.height / 2 : obj.height);
+            } else if (obj === flagpole) {
+                ctx.fillStyle = '#c0c0c0';
+                ctx.fillRect(obj.x, obj.y, obj.width, obj.height);
+                ctx.fillStyle = '#ff0000';
+                ctx.fillRect(obj.x - 20, obj.y, 30, 20);
+            }
+        }
+        
+        function drawBackground() {
+            // Simple parallax clouds
+            for (let i = 1; i <= 3; i++) {
+                const cloudX = (150 * i * i - cameraOffset.x * (0.1 * i)) % (gameWidth + 400) - 200;
+                const cloudY = 50 + i * 40;
+                ctx.fillStyle = 'rgba(255, 255, 255, 0.9)';
+                ctx.fillRect(cloudX, cloudY, 100, 40);
+                ctx.fillRect(cloudX + 20, cloudY - 20, 60, 80);
+            }
+        }
+        
+        window.onload = init;
+    </script>
+</body>
+</html>

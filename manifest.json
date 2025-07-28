@@ -1,0 +1,21 @@
+{
+  "name": "90's Game Hub",
+  "short_name": "GameHub",
+  "description": "Relive the golden era of gaming with a collection of classic 90s games.",
+  "start_url": "/index.html",
+  "display": "standalone",
+  "background_color": "#1e272e",
+  "theme_color": "#6c5ce7",
+  "icons": [
+    {
+      "src": "https://mighty27.s3.eu-north-1.amazonaws.com/90'sgamehub/images/icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png"
+    },
+    {
+      "src": "https://mighty27.s3.eu-north-1.amazonaws.com/90'sgamehub/images/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png"
+    }
+  ]
+}

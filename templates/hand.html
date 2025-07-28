@@ -1,0 +1,456 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <title>Hand Cricket 🏏 Toss & Play</title>
+    <style>
+        :root {
+            --primary-color: #00e676;
+            --primary-dark: #00c853;
+            --bg-color: #121212;
+            --surface-color: #1e1e1e;
+            --surface-light: #2a2a2a;
+            --text-color: #e0e0e0;
+            --accent-color: #bb86fc;
+            --win-color: var(--primary-color);
+            --lose-color: #ff5252;
+            --tie-color: #ffab40;
+        }
+
+        @import url('https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700&display=swap');
+
+        body {
+            font-family: 'Poppins', sans-serif;
+            max-width: 1000px;
+            margin: 0 auto;
+            padding: 15px;
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            text-align: center;
+        }
+        
+        body.no-scroll {
+            overflow: hidden;
+        }
+
+        .container {
+            background-color: var(--surface-color);
+            padding: 25px;
+            border-radius: 20px;
+            box-shadow: 0 8px 30px rgba(0, 0, 0, 0.5);
+            border: 1px solid #333;
+            transition: opacity 0.5s ease-in-out;
+        }
+
+        h1 {
+            color: var(--primary-color);
+            text-align: center;
+            margin: 0;
+            font-size: 2.2em;
+            font-weight: 700;
+            text-shadow: 0 2px 5px rgba(0, 0, 0, 0.4);
+        }
+
+        h2, h3 {
+            color: var(--primary-color);
+            font-weight: 600;
+        }
+
+        .header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+            gap: 10px;
+        }
+        .header-side { flex: 1; display: flex; gap: 10px; }
+        .header-side.left { justify-content: flex-start; }
+        .header-side.right { justify-content: flex-end; }
+        
+        /* --- Toss Screen Styles --- */
+        #toss-container h2 { font-size: 2em; color: var(--accent-color); }
+        .coin-container { perspective: 1000px; margin: 30px auto; width: 100px; height: 100px; }
+        #coin { width: 100%; height: 100%; position: relative; transform-style: preserve-3d; }
+        .coin-side { position: absolute; height: 100%; width: 100%; backface-visibility: hidden; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 2em; font-weight: bold; }
+        .heads { background: linear-gradient(45deg, #ffd700, #f0c500); color: #4a3c00; }
+        .tails { background: linear-gradient(45deg, #c0c0c0, #a0a0a0); color: #333; transform: rotateY(180deg); }
+        
+        #coin.flipping { animation: flip 1.5s ease-out forwards; }
+        @keyframes flip { from { transform: rotateY(0); } to { transform: rotateY(1800deg); } }
+
+        #toss-status { min-height: 30px; font-size: 1.4em; font-weight: bold; margin-top: 20px; }
+        
+        /* --- Game Screen Styles --- */
+        .pitch { display: flex; justify-content: space-around; align-items: center; margin: 20px 0; padding: 10px; background-color: var(--surface-light); border-radius: 12px; }
+        .hand-display { text-align: center; }
+        .hand-emoji { font-size: 5em; display: inline-block; }
+        .animate-hand { animation: hand-pop 0.5s ease; }
+        @keyframes hand-pop { 0% { transform: scale(0.8); } 50% { transform: scale(1.2); } 100% { transform: scale(1); } }
+        
+        .scoreboard { display: flex; justify-content: space-around; margin: 25px 0; padding: 5px 15px; }
+        .scoreboard p { font-size: 2.5em; font-weight: bold; margin: 10px 0; color: #ffffff; min-width: 80px; transition: transform 0.2s; }
+        .score-updated { animation: score-update 0.4s ease; }
+        @keyframes score-update { 0% { transform: scale(1); } 50% { transform: scale(1.3); color: var(--secondary-color); } 100% { transform: scale(1); } }
+
+        .controls { display: flex; justify-content: center; flex-wrap: wrap; gap: 12px; margin: 25px 0; }
+
+        button, .button-link {
+            padding: 12px 22px; font-size: 1.1em;
+            background-color: var(--primary-color); color: black;
+            border: none; border-radius: 8px; cursor: pointer;
+            transition: all 0.2s ease-in-out; font-weight: bold;
+            box-shadow: 0 3px 6px rgba(0, 0, 0, 0.25);
+            -webkit-tap-highlight-color: transparent;
+            text-decoration: none; display: inline-block;
+        }
+        button:hover, .button-link:hover { background-color: var(--primary-dark); transform: translateY(-3px); box-shadow: 0 5px 10px rgba(0, 0, 0, 0.35); color: black; }
+        button:active, .button-link:active { transform: translateY(0) scale(0.98); }
+        button:disabled { background-color: #555; cursor: not-allowed; transform: none; box-shadow: none; color: #999; }
+        .number-btn { min-width: 55px; font-size: 1.4em; }
+        .secondary-btn { background-color: var(--surface-light); color: var(--primary-color); border: 1px solid var(--primary-color); }
+        .secondary-btn:hover { background-color: var(--primary-color); color: black; }
+
+        .game-log { height: 200px; overflow-y: auto; padding: 15px; background-color: var(--surface-light); border: 1px solid #444; border-radius: 12px; margin-top: 25px; scroll-behavior: smooth; }
+        .log-entry { margin: 8px 0; padding-bottom: 8px; border-bottom: 1px solid #3a3a3a; font-size: 0.95em; text-align: left; }
+        .log-entry:last-child { border-bottom: none; }
+        .user-log { color: var(--win-color); } .comp-log { color: var(--lose-color); }
+        .info-log { color: var(--accent-color); font-weight: bold; } .out-log { color: var(--lose-color); font-weight: bold; font-style: italic; }
+
+        .result { font-size: 1.25em; font-weight: bold; text-align: center; margin: 25px 0; padding: 18px; border-radius: 12px; }
+        .win { background-color: rgba(0, 230, 118, 0.2); color: var(--win-color); border: 1px solid var(--win-color); }
+        .lose { background-color: rgba(255, 82, 82, 0.2); color: var(--lose-color); border: 1px solid var(--lose-color); }
+        .tie { background-color: rgba(255, 171, 64, 0.2); color: var(--tie-color); border: 1px solid var(--tie-color); }
+
+        #game-status { font-size: 1.4em; margin-bottom: 20px; color: var(--accent-color); min-height: 40px; }
+        .hidden { display: none !important; }
+
+        /* Modal Styles */
+        .modal { display: none; position: fixed; z-index: 1000; left: 0; top: 0; width: 100%; height: 100%; overflow: auto; background-color: rgba(0, 0, 0, 0.7); animation: fadeIn 0.3s; }
+        .modal-content { background-color: var(--surface-color); margin: 15% auto; padding: 25px; border: 1px solid #888; width: 90%; max-width: 600px; border-radius: 15px; position: relative; box-shadow: 0 5px 20px rgba(0,0,0,0.5); animation: slideIn 0.4s; }
+        .close-btn { color: #aaa; position: absolute; top: 10px; right: 20px; font-size: 28px; font-weight: bold; cursor: pointer;}
+        .close-btn:hover, .close-btn:focus { color: white; }
+        .modal-content h2 { margin-top: 0; } .modal-content ul { list-style-type: '🏏'; padding-left: 20px; text-align: left;} .modal-content li { margin-bottom: 10px; }
+        @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+        @keyframes slideIn { from { transform: translateY(-50px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
+
+        /* Scrollbar */
+        .game-log::-webkit-scrollbar { width: 8px; }
+        .game-log::-webkit-scrollbar-track { background: var(--surface-light); }
+        .game-log::-webkit-scrollbar-thumb { background: var(--primary-color); border-radius: 4px; }
+        
+        /* Responsive */
+        @media (max-width: 480px) {
+            h1 { font-size: 1.8em; }
+            .header { flex-direction: column; }
+            button, .button-link { padding: 10px 18px; font-size: 1em; }
+            .number-btn { min-width: 45px; font-size: 1.2em; }
+            .hand-emoji { font-size: 4em; }
+            .scoreboard p { font-size: 2em; }
+        }
+    </style>
+</head>
+<body>
+
+    <div id="toss-container" class="container">
+        <h1>Hand Cricket</h1>
+        <h2>It's Toss Time!</h2>
+        <div class="coin-container">
+            <div id="coin">
+                <div class="coin-side heads">H</div>
+                <div class="coin-side tails">T</div>
+            </div>
+        </div>
+        <div id="toss-status">Make your call</div>
+        <div id="toss-controls" class="controls">
+            <button id="heads-btn">Heads</button>
+            <button id="tails-btn">Tails</button>
+        </div>
+        <div id="innings-choice-controls" class="controls hidden">
+             <button id="bat-first-btn">Bat First</button>
+             <button id="bowl-first-btn">Bowl First</button>
+        </div>
+    </div>
+
+    <div id="game-container" class="container hidden">
+        <div class="header">
+            <div class="header-side left">
+                <a href="/" class="secondary-btn button-link">Back</a>
+            </div>
+            <h1>Hand Cricket</h1>
+            <div class="header-side right">
+                <button id="restart-btn" class="secondary-btn">Restart</button>
+                <button id="instructions-btn" class="secondary-btn">Help</button>
+            </div>
+        </div>
+
+        <div class="pitch">
+            <div class="hand-display">
+                <h3>Your Hand</h3>
+                <div class="hand-emoji" id="user-hand-emoji">❓</div>
+            </div>
+            <div class="hand-display">
+                <h3>Comp's Hand</h3>
+                <div class="hand-emoji" id="comp-hand-emoji">❓</div>
+            </div>
+        </div>
+        
+        <div class="scoreboard">
+            <div><h3>Your Score</h3><p id="user-score">0</p></div>
+            <div><h3>Computer Score</h3><p id="comp-score">0</p></div>
+        </div>
+        
+        <div class="player-section">
+            <h2 id="game-status"></h2>
+            <div id="number-controls" class="controls">
+                <button class="number-btn" data-value="1">1</button>
+                <button class="number-btn" data-value="2">2</button>
+                <button class="number-btn" data-value="3">3</button>
+                <button class="number-btn" data-value="4">4</button>
+                <button class="number-btn" data-value="5">5</button>
+                <button class="number-btn" data-value="6">6</button>
+            </div>
+            <div id="continue-controls" class="controls hidden">
+                <button id="continue-btn">Continue to Next Innings</button>
+            </div>
+        </div>
+        
+        <div id="result-display" class="result hidden"></div>
+        <div class="game-log">
+            <h3>Game Log</h3>
+            <div id="log-entries"></div>
+        </div>
+    </div>
+    
+    <div id="instructions-modal" class="modal">
+        <div class="modal-content">
+            <span class="close-btn">&times;</span>
+            <h2>How to Play Hand Cricket</h2>
+            <ul>
+                 <li><strong>Toss:</strong> First, call Heads or Tails. If you win, you choose to Bat or Bowl. If the computer wins, it will choose.</li>
+                 <li><strong>Batting:</strong> Pick a number from 1-6. If the computer's number is different, your number is added to your score.</li>
+                 <li><strong>Bowling:</strong> Pick a number from 1-6. If the computer's number is different, its number is added to its score.</li>
+                 <li><strong>OUT!:</strong> If you both pick the same number, the batsman is out, and the innings ends.</li>
+                 <li><strong>The Goal:</strong> Score more runs than the computer before you get out (or get the computer out)!</li>
+            </ul>
+        </div>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            const tossContainer = document.getElementById('toss-container');
+            const gameContainer = document.getElementById('game-container');
+            const coin = document.getElementById('coin');
+            const tossStatus = document.getElementById('toss-status');
+            const tossControls = document.getElementById('toss-controls');
+            const inningsChoiceControls = document.getElementById('innings-choice-controls');
+            const headsBtn = document.getElementById('heads-btn');
+            const tailsBtn = document.getElementById('tails-btn');
+            const userScoreEl = document.getElementById('user-score');
+            const compScoreEl = document.getElementById('comp-score');
+            const gameStatusEl = document.getElementById('game-status');
+            const resultDisplayEl = document.getElementById('result-display');
+            const logEntriesEl = document.getElementById('log-entries');
+            const userHandEmoji = document.getElementById('user-hand-emoji');
+            const compHandEmoji = document.getElementById('comp-hand-emoji');
+            const numberControls = document.getElementById('number-controls');
+            const continueControls = document.getElementById('continue-controls');
+            const batFirstBtn = document.getElementById('bat-first-btn');
+            const bowlFirstBtn = document.getElementById('bowl-first-btn');
+            const continueBtn = document.getElementById('continue-btn');
+            const restartBtn = document.getElementById('restart-btn');
+            const instructionsModal = document.getElementById('instructions-modal');
+            const instructionsBtn = document.getElementById('instructions-btn');
+            const closeBtn = document.querySelector('.close-btn');
+
+            let userScore = 0, compScore = 0, targetScore = 0;
+            let isUserBatting = true;
+            let gamePhase = 'toss'; // toss, firstInnings, secondInnings, gameOver
+            let userMoveHistory = [];
+            const handEmojis = { 1: '☝️', 2: '✌️', 3: '👌', 4: '🖖', 5: '🖐️', 6: '🤙' };
+
+            // --- Event Listeners ---
+            headsBtn.addEventListener('click', () => handleToss('Heads'));
+            tailsBtn.addEventListener('click', () => handleToss('Tails'));
+            batFirstBtn.addEventListener('click', () => startGame(true));
+            bowlFirstBtn.addEventListener('click', () => startGame(false));
+            continueBtn.addEventListener('click', startSecondInnings);
+            restartBtn.addEventListener('click', () => location.reload());
+            document.querySelectorAll('.number-btn').forEach(button => {
+                button.addEventListener('click', () => playTurn(parseInt(button.dataset.value)));
+            });
+            instructionsBtn.addEventListener('click', () => instructionsModal.style.display = 'block');
+            closeBtn.addEventListener('click', () => instructionsModal.style.display = 'none');
+            window.addEventListener('click', (event) => {
+                if (event.target == instructionsModal) instructionsModal.style.display = 'none';
+            });
+
+            // --- Core Game Functions ---
+            function handleToss(playerCall) {
+                tossControls.classList.add('hidden');
+                coin.classList.add('flipping');
+                
+                const tossResult = Math.random() < 0.5 ? 'Heads' : 'Tails';
+                
+                setTimeout(() => {
+                    const playerWon = playerCall === tossResult;
+                    tossStatus.textContent = `It's ${tossResult}! ${playerWon ? "You won the toss!" : "Computer won the toss!"}`;
+                    
+                    if (playerWon) {
+                        inningsChoiceControls.classList.remove('hidden');
+                    } else {
+                        setTimeout(() => {
+                            const compChoice = Math.random() < 0.8 ? false : true; // 80% chance to bowl first
+                            tossStatus.textContent = `Computer has chosen to ${compChoice ? 'bat' : 'bowl'} first.`;
+                            setTimeout(() => startGame(!compChoice), 2000);
+                        }, 1500);
+                    }
+                }, 1500);
+            }
+
+            function startGame(userWillBat) {
+                tossContainer.style.opacity = '0';
+                setTimeout(() => {
+                    tossContainer.classList.add('hidden');
+                    gameContainer.classList.remove('hidden');
+                    gameContainer.style.opacity = '1';
+                }, 500);
+
+                document.body.classList.add('no-scroll');
+                isUserBatting = userWillBat;
+                gamePhase = 'firstInnings';
+                gameStatusEl.textContent = isUserBatting ? "You are batting. Pick a number!" : "You are bowling. Pick a number!";
+                addLogEntry(`Toss complete. ${isUserBatting ? "You are batting first." : "Computer is batting first."}`, "info");
+            }
+            
+            function playTurn(userNumber) {
+                if (gamePhase === 'gameOver') return;
+
+                userMoveHistory.push(userNumber);
+                const compNumber = getComputerChoice();
+                
+                updateHandEmojis(userNumber, compNumber);
+
+                if (userNumber === compNumber) {
+                    addLogEntry(`${isUserBatting ? "You" : "Computer"} chose ${userNumber}, ${isUserBatting ? "Computer" : "You"} chose ${compNumber}. OUT!`, "out");
+                    if (gamePhase === 'firstInnings') endFirstInnings();
+                    else endGame();
+                } else {
+                    if (isUserBatting) {
+                        updateScore('user', userNumber);
+                        if (gamePhase === 'secondInnings' && userScore >= targetScore) endGame();
+                    } else {
+                        updateScore('comp', compNumber);
+                        if (gamePhase === 'secondInnings' && compScore >= targetScore) endGame();
+                    }
+                }
+            }
+
+            function endFirstInnings() {
+                gamePhase = 'secondInnings';
+                numberControls.classList.add('hidden');
+                continueControls.classList.remove('hidden');
+                
+                if (isUserBatting) {
+                    targetScore = userScore + 1;
+                    gameStatusEl.textContent = `Innings Over! You scored ${userScore}.`;
+                    addLogEntry(`Computer needs ${targetScore} runs to win.`, "info");
+                } else {
+                    targetScore = compScore + 1;
+                    gameStatusEl.textContent = `Innings Over! Computer scored ${compScore}.`;
+                    addLogEntry(`You need ${targetScore} runs to win.`, "info");
+                }
+            }
+            
+            function startSecondInnings() {
+                isUserBatting = !isUserBatting; // Switch roles
+                continueControls.classList.add('hidden');
+                numberControls.classList.remove('hidden');
+                userHandEmoji.textContent = '❓';
+                compHandEmoji.textContent = '❓';
+                gameStatusEl.textContent = isUserBatting ? `Chase Target: ${targetScore}. Let's bat!` : `Defend Score: ${userScore}. Let's bowl!`;
+            }
+
+            function endGame() {
+                gamePhase = 'gameOver';
+                numberControls.classList.add('hidden');
+                
+                let resultMessage, resultClass;
+                if (userScore > compScore) {
+                    resultMessage = `🎉 Congratulations! You won by ${userScore - compScore} runs.`;
+                    resultClass = 'win';
+                } else if (compScore > userScore) {
+                    resultMessage = `💔 Computer wins by ${compScore - userScore} runs.`;
+                    resultClass = 'lose';
+                } else {
+                    resultMessage = `🤝 It's a TIE! Both scored ${userScore}.`;
+                    resultClass = 'tie';
+                }
+                
+                gameStatusEl.textContent = "Game Over!";
+                resultDisplayEl.textContent = resultMessage;
+                resultDisplayEl.className = `result ${resultClass}`;
+                resultDisplayEl.classList.remove('hidden');
+
+                addLogEntry(resultMessage, "info");
+            }
+            
+            // --- Helper & AI Functions ---
+            function getComputerChoice() {
+                const choices = [1, 2, 3, 4, 5, 6];
+                if (!isUserBatting) { // Comp batting (smarter)
+                    const lastUserMove = userMoveHistory[userMoveHistory.length - 1];
+                    const safeChoices = choices.filter(c => c !== lastUserMove);
+                    // Heavily favor 4, 5, 6, but avoid player's last move
+                    const weightedChoices = [...safeChoices];
+                    safeChoices.forEach(c => { if (c > 3) weightedChoices.push(c,c); });
+                    return weightedChoices[Math.floor(Math.random() * weightedChoices.length)] || 4;
+                } else { // Comp bowling (smarter)
+                    if (userMoveHistory.length > 2 && Math.random() < 0.4) {
+                        // 40% chance to predict player's last move
+                        return userMoveHistory[userMoveHistory.length - 1];
+                    }
+                    return choices[Math.floor(Math.random() * choices.length)];
+                }
+            }
+            
+            function updateScore(player, runs) {
+                if (player === 'user') {
+                    userScore += runs;
+                    userScoreEl.textContent = userScore;
+                    userScoreEl.classList.add('score-updated');
+                    addLogEntry(`You scored ${runs} runs.`, "user");
+                } else {
+                    compScore += runs;
+                    compScoreEl.textContent = compScore;
+                    compScoreEl.classList.add('score-updated');
+                    addLogEntry(`Computer scored ${runs} runs.`, "comp");
+                }
+                setTimeout(() => {
+                    userScoreEl.classList.remove('score-updated');
+                    compScoreEl.classList.remove('score-updated');
+                }, 400);
+            }
+
+            function updateHandEmojis(userNumber, compNumber) {
+                userHandEmoji.textContent = handEmojis[userNumber];
+                compHandEmoji.textContent = handEmojis[compNumber];
+                userHandEmoji.classList.add('animate-hand');
+                compHandEmoji.classList.add('animate-hand');
+                setTimeout(() => {
+                    userHandEmoji.classList.remove('animate-hand');
+                    compHandEmoji.classList.remove('animate-hand');
+                }, 500);
+            }
+
+            function addLogEntry(message, type) {
+                const entry = document.createElement('div');
+                entry.className = `log-entry ${type}-log`;
+                entry.textContent = message;
+                logEntriesEl.appendChild(entry);
+                logEntriesEl.scrollTop = logEntriesEl.scrollHeight;
+            }
+        });
+    </script>
+</body>
+</html>

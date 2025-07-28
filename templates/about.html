@@ -1,0 +1,659 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>About Us - Game Hub</title>
+    <style>
+        :root {
+            --primary: #6c5ce7;
+            --primary-light: #8579e8;
+            --secondary: #a29bfe;
+            --accent: #fd79a8;
+            --accent-light: #fe8db6;
+            --dark: #2d3436;
+            --darker: #1e272e;
+            --light: #f5f6fa;
+            --light-gray: #dfe6e9;
+            --success: #00b894;
+            --danger: #d63031;
+            --warning: #fdcb6e;
+            --info: #0984e3;
+        }
+        
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Poppins', 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+        
+        html {
+            scroll-behavior: smooth;
+        }
+
+        body {
+            background-color: var(--darker);
+            color: var(--light);
+            overflow-x: hidden;
+            min-height: 100vh;
+            position: relative;
+        }
+        
+        /* Animated Gradient Background */
+        .gradient-bg {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: -3;
+            background: linear-gradient(-45deg, #1e272e, #2d3436, #6c5ce7, #fd79a8);
+            background-size: 400% 400%;
+            animation: gradientBG 15s ease infinite;
+        }
+        
+        @keyframes gradientBG {
+            0% { background-position: 0% 50%; }
+            50% { background-position: 100% 50%; }
+            100% { background-position: 0% 50%; }
+        }
+        
+        /* Floating Elements */
+        .floating-elements {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: -1;
+            overflow: hidden;
+            pointer-events: none;
+        }
+        
+        .floating-element {
+            position: absolute;
+            border-radius: 50%;
+            background: rgba(108, 92, 231, 0.1);
+            animation: float 15s infinite linear;
+            filter: blur(1px);
+        }
+        
+        .floating-element:nth-child(1) {
+            width: 80vh; height: 80vh; top: -20vh; left: -20vh; animation-delay: 0s;
+            background: radial-gradient(circle, rgba(108, 92, 231, 0.2) 0%, rgba(108, 92, 231, 0) 70%);
+        }
+        .floating-element:nth-child(2) {
+            width: 60vh; height: 60vh; bottom: -15vh; right: -15vh; animation-delay: 2s;
+            background: radial-gradient(circle, rgba(253, 121, 168, 0.2) 0%, rgba(253, 121, 168, 0) 70%);
+        }
+        .floating-element:nth-child(3) {
+            width: 40vh; height: 40vh; top: 30vh; right: -10vh; animation-delay: 4s;
+            background: radial-gradient(circle, rgba(162, 155, 254, 0.2) 0%, rgba(162, 155, 254, 0) 70%);
+        }
+        .floating-element:nth-child(4) {
+            width: 50vh; height: 50vh; bottom: 10vh; left: -15vh; animation-delay: 6s;
+            background: radial-gradient(circle, rgba(0, 184, 148, 0.2) 0%, rgba(0, 184, 148, 0) 70%);
+        }
+        
+        @keyframes float {
+            0% { transform: translate(0, 0) rotate(0deg); }
+            50% { transform: translate(20px, 20px) rotate(180deg); }
+            100% { transform: translate(0, 0) rotate(360deg); }
+        }
+        
+        /* Main Container */
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 2rem;
+            position: relative;
+        }
+        
+        /* Header */
+        header {
+            text-align: center;
+            margin-bottom: 3rem;
+            position: relative;
+            padding-top: 2rem;
+        }
+        
+        .logo {
+            font-size: 4rem;
+            font-weight: 800;
+            background: linear-gradient(45deg, var(--primary), var(--accent));
+            -webkit-background-clip: text;
+            background-clip: text;
+            color: transparent;
+            margin-bottom: 1rem;
+            letter-spacing: 2px;
+            text-shadow: 0 0 20px rgba(108, 92, 231, 0.3);
+            position: relative;
+            display: inline-block;
+        }
+        
+        .logo::after {
+            content: '';
+            position: absolute;
+            bottom: -10px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 100px;
+            height: 4px;
+            background: linear-gradient(90deg, var(--primary), var(--accent));
+            border-radius: 2px;
+            animation: pulseUnderline 2s infinite ease-in-out;
+        }
+        
+        @keyframes pulseUnderline {
+            0% { width: 100px; opacity: 0.8; }
+            50% { width: 150px; opacity: 1; }
+            100% { width: 100px; opacity: 0.8; }
+        }
+        
+        nav {
+            display: flex;
+            justify-content: center;
+            gap: 1.5rem;
+            margin-top: 1.5rem;
+            flex-wrap: wrap;
+        }
+        
+        nav a {
+            color: var(--light);
+            text-decoration: none;
+            font-weight: 600;
+            padding: 0.7rem 1.5rem;
+            border-radius: 50px;
+            transition: all 0.3s ease;
+            position: relative;
+            background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(5px);
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+        }
+        
+        nav a:hover {
+            background: linear-gradient(45deg, var(--primary), var(--accent));
+            transform: translateY(-3px);
+            box-shadow: 0 8px 25px rgba(108, 92, 231, 0.3);
+            color: white;
+        }
+        
+        nav a.active {
+            background: linear-gradient(45deg, var(--primary), var(--accent));
+            color: white;
+            box-shadow: 0 8px 25px rgba(108, 92, 231, 0.3);
+        }
+        
+        /* Content Sections */
+        .about-section {
+            background: rgba(45, 52, 54, 0.7);
+            border-radius: 15px;
+            padding: 2.5rem;
+            margin-bottom: 3rem;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+            opacity: 0;
+            animation: fadeInUp 1s forwards;
+            animation-play-state: paused;
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+        }
+        
+        .about-section:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 15px 35px rgba(108, 92, 231, 0.4);
+            border-color: var(--primary);
+        }
+        
+        @keyframes fadeInUp {
+            to {
+                transform: translateY(0);
+                opacity: 1;
+            }
+        }
+        
+        h1 {
+            font-size: 2.5rem;
+            margin-bottom: 1.5rem;
+            text-align: center;
+            position: relative;
+            background: linear-gradient(45deg, var(--primary), var(--accent));
+            -webkit-background-clip: text;
+            background-clip: text;
+            color: transparent;
+            font-weight: 800;
+        }
+        
+        h1::after {
+            content: '';
+            display: block;
+            width: 100px;
+            height: 4px;
+            background: linear-gradient(90deg, var(--primary), var(--accent));
+            margin: 0.5rem auto;
+            border-radius: 2px;
+        }
+        
+        h2 {
+            font-size: 1.8rem;
+            margin: 1.5rem 0 1rem;
+            color: var(--accent);
+            font-weight: 700;
+        }
+        
+        p, ul {
+            margin-bottom: 1rem;
+            font-size: 1.1rem;
+            color: var(--light-gray);
+            line-height: 1.7;
+        }
+
+        .about-section ul {
+            list-style-position: inside;
+            padding-left: 1rem;
+        }
+
+        .about-section li {
+            margin-bottom: 0.5rem;
+        }
+        
+        /* Team Section */
+        .team-section {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+            gap: 2rem;
+            margin-top: 3rem;
+        }
+        
+        .team-member {
+            background: rgba(40, 40, 40, 0.7);
+            border-radius: 15px;
+            padding: 1.5rem;
+            text-align: center;
+            transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            opacity: 0;
+            animation: fadeIn 0.5s forwards;
+            animation-play-state: paused;
+            box-shadow: 0 10px 20px rgba(0, 0, 0, 0.2);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(5px);
+        }
+        
+        @keyframes fadeIn {
+            to {
+                transform: scale(1);
+                opacity: 1;
+            }
+        }
+        
+        .team-member:hover {
+            transform: translateY(-10px) scale(1.03);
+            box-shadow: 0 20px 40px rgba(108, 92, 231, 0.4);
+            background: rgba(50, 50, 50, 0.9);
+            border-color: var(--primary);
+        }
+        
+        .member-img {
+            width: 150px;
+            height: 150px;
+            border-radius: 50%;
+            object-fit: cover;
+            border: 3px solid var(--primary);
+            margin-bottom: 1.5rem;
+            transition: all 0.3s ease;
+            box-shadow: 0 10px 20px rgba(108, 92, 231, 0.3);
+        }
+        
+        .team-member:hover .member-img {
+            border-color: var(--accent);
+            transform: rotate(10deg);
+            box-shadow: 0 15px 30px rgba(253, 121, 168, 0.3);
+        }
+        
+        .member-name {
+            font-size: 1.5rem;
+            font-weight: 700;
+            margin-bottom: 0.5rem;
+            color: var(--light);
+            transition: color 0.3s ease;
+        }
+        
+        .team-member:hover .member-name {
+            color: var(--accent);
+        }
+        
+        .member-role {
+            color: var(--secondary);
+            font-weight: 600;
+            margin-bottom: 1rem;
+            font-size: 1rem;
+        }
+        
+        .member-bio {
+            color: var(--light-gray);
+            font-size: 0.95rem;
+            margin-bottom: 1.5rem;
+            line-height: 1.6;
+        }
+        
+        /* Stats Section */
+        .stats {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 2rem;
+            margin: 3rem 0;
+        }
+        
+        .stat-item {
+            text-align: center;
+            padding: 2rem;
+            background: rgba(40, 40, 40, 0.7);
+            border-radius: 15px;
+            transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            opacity: 0;
+            animation: fadeInUp 0.5s forwards;
+            animation-play-state: paused;
+            box-shadow: 0 10px 20px rgba(0, 0, 0, 0.2);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(5px);
+        }
+        
+        .stat-item:hover {
+            transform: translateY(-10px);
+            box-shadow: 0 20px 40px rgba(108, 92, 231, 0.4);
+            border-color: var(--primary);
+        }
+        
+        .stat-number {
+            font-size: 3rem;
+            font-weight: 800;
+            background: linear-gradient(45deg, var(--primary), var(--accent));
+            -webkit-background-clip: text;
+            background-clip: text;
+            color: transparent;
+            margin-bottom: 0.5rem;
+        }
+        
+        .stat-label {
+            font-size: 1.1rem;
+            color: var(--light-gray);
+            font-weight: 300;
+        }
+        
+        /* Footer Styles & Routing */
+        footer {
+            background: rgba(30, 39, 46, 0.8);
+            padding: 3rem 0;
+            text-align: center;
+            margin-top: 3rem;
+            border-top: 1px solid rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(5px);
+        }
+        
+        .footer-links {
+            display: flex;
+            justify-content: center;
+            flex-wrap: wrap;
+            gap: 2rem;
+            margin-bottom: 1.5rem;
+        }
+        
+        .footer-links a {
+            color: var(--light-gray);
+            text-decoration: none;
+            transition: all 0.3s ease;
+            font-weight: 300;
+        }
+        
+        .footer-links a:hover {
+            color: var(--accent);
+            transform: translateY(-2px);
+        }
+        
+        .social-links-footer {
+            display: flex;
+            justify-content: center;
+            gap: 1.5rem;
+            margin-bottom: 2rem;
+        }
+        
+        .social-links-footer a {
+            color: var(--secondary);
+            font-size: 1.5rem;
+            transition: all 0.3s ease;
+            width: 45px;
+            height: 45px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: rgba(255, 255, 255, 0.05);
+            text-decoration: none;
+        }
+        
+        .social-links-footer a:hover {
+            color: var(--accent);
+            transform: translateY(-3px) scale(1.2);
+            background: rgba(253, 121, 168, 0.1);
+            box-shadow: 0 5px 15px rgba(253, 121, 168, 0.2);
+        }
+        
+        .copyright {
+            color: var(--light-gray);
+            font-size: 0.9rem;
+            opacity: 0.7;
+        }
+        
+        /* Scroll to Top Button */
+        .scroll-top {
+            position: fixed;
+            bottom: 2rem;
+            right: 2rem;
+            width: 50px;
+            height: 50px;
+            border-radius: 50%;
+            background: linear-gradient(45deg, var(--primary), var(--accent));
+            color: white;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            opacity: 0;
+            visibility: hidden;
+            box-shadow: 0 5px 20px rgba(108, 92, 231, 0.4);
+            z-index: 100;
+            border: none;
+        }
+        
+        .scroll-top.visible {
+            opacity: 1;
+            visibility: visible;
+        }
+        
+        .scroll-top:hover {
+            transform: translateY(-5px) scale(1.1);
+            box-shadow: 0 8px 25px rgba(108, 92, 231, 0.5);
+        }
+        
+        /* Responsive Styles */
+        @media (max-width: 1200px) {
+            .container { padding: 1.5rem; }
+            .logo { font-size: 3.5rem; }
+        }
+        
+        @media (max-width: 768px) {
+            .logo { font-size: 2.8rem; }
+            nav { gap: 1rem; }
+            nav a { padding: 0.6rem 1.2rem; font-size: 0.9rem; }
+            .team-section { grid-template-columns: 1fr; }
+            .stats { grid-template-columns: 1fr 1fr; }
+            .about-section { padding: 1.8rem; }
+        }
+        
+        @media (max-width: 480px) {
+            .container { padding: 1rem; }
+            .logo { font-size: 2.2rem; }
+            .stats { grid-template-columns: 1fr; }
+            .footer-links { gap: 1.5rem; flex-direction: column; }
+        }
+    </style>
+</head>
+<body>
+    <div class="gradient-bg"></div>
+    <div class="floating-elements">
+        <div class="floating-element"></div>
+        <div class="floating-element"></div>
+        <div class="floating-element"></div>
+        <div class="floating-element"></div>
+    </div>
+    
+    <header>
+        <div class="logo">90's Game Hub</div>
+        <nav>
+            <a href="{{ url_for('index') }}">Home</a>
+            <a href="{{ url_for('about') }}" class="active">About Us</a>
+            <a href="{{ url_for('contact') }}">Contact</a>
+            <a href="{{ url_for('privacy') }}">Privacy Policy</a>
+            <a href="{{ url_for('terms') }}">Terms of Service</a>
+        </nav>
+    </header>
+
+    <div class="container">
+        <section class="about-section">
+            <h1>About 90's Game Hub</h1>
+            <p>Welcome to 90's Game Hub, the ultimate destination for a personalized retro gaming experience! We've evolved from a simple portal into a feature-rich community. By creating a free account, you unlock a world of tailored features, save your progress, and connect with fellow gamers.</p>
+            
+            <h2>Our New Philosophy</h2>
+            <p>We believe in creating a deep and engaging gaming journey. User accounts are now at the heart of our platform, allowing us to provide a personalized experience for every player—from saving high scores and tailoring game recommendations to fostering a vibrant community. Your account is your key to a richer, more connected gaming world.</p>
+            
+            <h2>What We Now Offer</h2>
+            <p>With your free 90's Game Hub account, you can now access a suite of new features designed to enhance your gameplay:</p>
+            <ul>
+                <li><strong>Save Your Progress:</strong> Never lose a high score or game state again.</li>
+                <li><strong>Personalized Profiles:</strong> Customize your profile and see your gaming stats.</li>
+                <li><strong>Cross-Device Syncing:</strong> Pick up right where you left off, on any device.</li>
+                <li><strong>Friend Lists & Leaderboards:</strong> Connect with friends and compete for the top spot.</li>
+            </ul>
+            
+            <div class="stats">
+                <div class="stat-item">
+                    <div class="stat-number">50K+</div>
+                    <div class="stat-label">Registered Users</div>
+                </div>
+                <div class="stat-item">
+                    <div class="stat-number">20+</div>
+                    <div class="stat-label">Games Available</div>
+                </div>
+                <div class="stat-item">
+                    <div class="stat-number">1</div>
+                    <div class="stat-label">Personalized Hub</div>
+                </div>
+                <div class="stat-item">
+                    <div class="stat-number">100%</div>
+                    <div class="stat-label">Free to Join</div>
+                </div>
+            </div>
+        </section>
+
+        <section class="about-section">
+            <h2>Our Commitment to You</h2>
+            <p>To power these new features, we now require users to log in. This allows us to use browser cache and user data to improve your experience. We are committed to managing your data responsibly:</p>
+            <ul>
+                <li><strong>Enhanced Personalization:</strong> We use gameplay data and cache to help you discover new games and resume your progress easily.</li>
+                <li><strong>Data Security:</strong> Your account information and data are protected using robust security measures.</li>
+                <li><strong>Full Transparency:</strong> Our updated Privacy Policy clearly outlines what data we collect and how it's used to make your experience better.</li>
+            </ul>
+            
+            <h2>Meet The Team</h2>
+            <p>Our small but passionate team of developers and gaming enthusiasts remains dedicated to bringing you the best browser-based gaming experience.</p>
+            
+            <div class="team-section">
+                <div class="team-member">
+                    <img src="{{ url_for('static', filename='images/srini.webp') }}" alt="Srinivasan, Founder & Developer" class="member-img">
+                    <h3 class="member-name">Srinivasan</h3>
+                    <p class="member-role">Founder & Developer</p>
+                    <p class="member-bio">Evolving the platform to create deeper, more engaging player experiences.</p>
+                </div>
+                
+                <div class="team-member">
+                    <img src="{{ url_for('static', filename='images/mighty.jpg') }}" alt="Mighty, Game Curator" class="member-img">
+                    <h3 class="member-name">Mighty</h3>
+                    <p class="member-role">Game & Community Manager</p>
+                    <p class="member-bio">Curates our game library and fosters a fun, competitive community.</p>
+                </div>
+            </div>
+        </section>
+        
+        <section class="about-section">
+            <h2>How We Operate</h2>
+            <p>Creating an account on 90's Game Hub is free and unlocks a full suite of features. Our platform is supported by user engagement and advertising. The data we collect helps us maintain the service, personalize content, and add new features our community will love. For a detailed breakdown, please review our updated Privacy Policy and Terms of Service.</p>
+        </section>
+    </div>
+
+    <footer>
+        <div class="footer-links">
+            <a href="{{ url_for('privacy') }}">Privacy Policy</a>
+            <a href="{{ url_for('terms') }}">Terms of Service</a>
+            <a href="{{ url_for('contact') }}">Contact</a>
+            <a href="{{ url_for('about') }}">About Us</a>
+        </div>
+        <div class="social-links-footer">
+            <a href="#" target="_blank" rel="noopener noreferrer" aria-label="Our Twitter Profile"><i class="fab fa-twitter"></i></a>
+            <a href="#" target="_blank" rel="noopener noreferrer" aria-label="Our Facebook Profile"><i class="fab fa-facebook"></i></a>
+            <a href="#" target="_blank" rel="noopener noreferrer" aria-label="Our Instagram Profile"><i class="fab fa-instagram"></i></a>
+        </div>
+        <div class="copyright">© 2025 90's Game Hub. All rights reserved. All games are property of their respective owners.</div>
+    </footer>
+
+    <button class="scroll-top" aria-label="Scroll to top">
+        <i class="fas fa-arrow-up"></i>
+    </button>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            // Dynamically load Font Awesome for icons
+            const fontAwesome = document.createElement('link');
+            fontAwesome.rel = 'stylesheet';
+            fontAwesome.href = 'https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css';
+            document.head.appendChild(fontAwesome);
+            
+            // Scroll to top button functionality
+            const scrollTopBtn = document.querySelector('.scroll-top');
+            
+            window.addEventListener('scroll', function() {
+                if (window.pageYOffset > 300) {
+                    scrollTopBtn.classList.add('visible');
+                } else {
+                    scrollTopBtn.classList.remove('visible');
+                }
+            });
+            
+            scrollTopBtn.addEventListener('click', function() {
+                window.scrollTo({
+                    top: 0,
+                    behavior: 'smooth'
+                });
+            });
+            
+            // Intersection Observer for animations on scroll
+            const observer = new IntersectionObserver((entries, obs) => {
+                entries.forEach(entry => {
+                    if (entry.isIntersecting) {
+                        entry.target.style.animationPlayState = 'running';
+                        obs.unobserve(entry.target);
+                    }
+                });
+            }, {
+                threshold: 0.1
+            });
+
+            const elementsToAnimate = document.querySelectorAll('.about-section, .team-member, .stat-item');
+            elementsToAnimate.forEach(element => {
+                observer.observe(element);
+            });
+        });
+    </script>
+</body>
+</html>
