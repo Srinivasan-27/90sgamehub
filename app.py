@@ -11,7 +11,7 @@ app = Flask(__name__)
 app.secret_key = os.urandom(24)
 
 # MongoDB Connection
-client = MongoClient('mongodb://localhost:27017/')
+client = MongoClient('mongodb+srv://srini:sriniyogi@gamehubcluster.10plk5b.mongodb.net/?retryWrites=true&w=majority&appName=GamehubCluster')
 db = client['gamehub'] # Database name: gamehub
 
 # Collections
