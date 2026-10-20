@@ -8,16 +8,16 @@ from datetime import datetime, timedelta
 app = Flask(__name__)
 
 # --- Configuration ---
-app.secret_key = os.environ.get('SECRET_KEY', 'e264948c15bc1c3c7b98aeda04556555dc5ee4e814a5a078')
+app.secret_key = os.environ["SECRET_KEY"]
 
 # MongoDB Connection
-client = MongoClient('mongodb+srv://srini:Sriniyogi27@gamehubcluster.10plk5b.mongodb.net/?retryWrites=true&w=majority&appName=GamehubCluster')
-db = client['gamehub'] # Database name: gamehub
+client = MongoClient(os.environ["MONGO_URI"])
+db = client["gamehub"]
 
 # Collections
-users_collection = db['users']
-plays_collection = db['plays']
-contacts_collection = db['contacts'] # Collection for contact messages
+users_collection = db["users"]
+plays_collection = db["plays"]
+contacts_collection = db["contacts"]
 
 # --- Helper Functions ---
 def get_user_from_session():
