@@ -134,31 +134,47 @@ def profile():
                            total_play_count=total_play_count)
 
 # --- Other Page Routes ---
+
 @app.route('/contact', methods=['GET', 'POST'])
 def contact():
-    """Handles the contact page and form submission."""
     if request.method == 'POST':
-        data = request.get_json()
-        name = data.get('name')
-        email = data.get('email')
-        subject = data.get('subject')
-        message = data.get('message')
+        if request.is_json:
+            data = request.get_json(silent=True) or {}
+        else:
+            data = request.form
 
-        if not email or not subject or not message:
-            return jsonify({'error': 'Email, subject, and message are required fields.'}), 400
-        
+        name = data.get('name', '').strip()
+        email = data.get('email', '').strip()
+        subject = data.get('subject', 'Website Contact').strip()
+        message = data.get('message', '').strip()
+
+        if not email or not message:
+            return jsonify({
+                'error': 'Email and message are required.'
+            }), 400
+
         contact_document = {
-            'name': name if name else "Anonymous",
+            'name': name or 'Anonymous',
             'email': email,
-            'subject': subject,
+            'subject': subject or 'Website Contact',
             'message': message,
             'submitted_at': datetime.utcnow()
         }
-        
+
         contacts_collection.insert_one(contact_document)
-        return jsonify({'message': 'Your message has been received!'}), 200
+
+        if request.is_json:
+            return jsonify({
+                'message': 'Your message has been received!'
+            }), 200
+
+        return render_template(
+            'contact.html',
+            success='Your message has been received!'
+        )
 
     return render_template('contact.html')
+
 
 @app.route('/about')
 def about():
