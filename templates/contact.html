@@ -580,12 +580,51 @@
                 observer.observe(element);
             });
 
-            // Note: Add your form submission logic here (e.g., using Fetch API to send data to a server)
-            document.getElementById('contactForm').addEventListener('submit', function(e) {
-                e.preventDefault();
-                // Example: alert('Form submitted! (This is a placeholder)');
-                // In a real application, you would send the form data to a server.
-            });
+            
+const contactForm = document.getElementById('contactForm');
+if (contactForm) {
+    contactForm.addEventListener('submit', async function(e) {
+    e.preventDefault();
+
+    const form = this;
+    const button = form.querySelector('button[type="submit"]');
+    const originalText = button.textContent;
+
+    button.disabled = true;
+    button.textContent = 'Sending...';
+
+    try {
+        const response = await fetch('/contact', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+                name: form.querySelector('[name="name"]').value,
+                email: form.querySelector('[name="email"]').value,
+                message: form.querySelector('[name="message"]').value
+            })
+        });
+
+        const result = await response.json();
+
+        if (!response.ok) {
+            throw new Error(result.error || 'Message could not be sent.');
+        }
+
+        alert(result.message || 'Message sent successfully!');
+        form.reset();
+
+    } catch (error) {
+        console.error('Contact form error:', error);
+        alert('Could not send your message. Please try again.');
+    } finally {
+        button.disabled = false;
+        button.textContent = originalText;
+    }
+});
+}
+
         });
     </script>
 </body>
